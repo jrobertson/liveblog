@@ -8,17 +8,12 @@ require 'fileutils'
 
 class LiveBlog
 
-  def initialize(liveblogfilepath='.', urlbase: '/liveblog')
+  def initialize(liveblogfilepath='.')
 
     Dir.chdir liveblogfilepath
-    
-    @urlbase = urlbase
     @t = Time.now
     dxfile = File.join(path(), 'index.xml')
-
-    puts 'fxfile: ' + dxfile.inspect
-    File.exists?(dxfile) ? @dx = Dynarex.new(dxfile) : new_file()      
-    puts '@dx : ' + @dx.inspect
+    @dx = Dynarex.new  dxfile if File.exists? dxfile
       
   end
 
@@ -35,8 +30,7 @@ EOF
 
     @dx = Dynarex.new 
     @dx.import s
-    @dx.default_key = 'uid'
-    
+    @dx.default_key = 'uid'    
     save()
     
   end
@@ -49,20 +43,16 @@ EOF
     if rec then
       rec.x += "\n" + entry
       save()      
-      hashtag = entry[/#\w+$/]
-      [true, "%s %s/%s/index.html%s" % [entry, @urlbase, path(), hashtag]]
+      'section entry added'
     else
-      [false, 'rec not found']
+      'rec not found'
     end    
   end
   
   def add_section(entry)
 
-    hashtag = entry[/#\w+$/]
     @dx.create({x: entry})
     save()
-    
-    [true, "%s %s/%s/index.html%s" % [entry, @urlbase, path(), hashtag]]
   end
 
   def save()
