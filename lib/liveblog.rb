@@ -90,13 +90,32 @@ EOF
     doc = Rexle.new File.read(newfilepath)
     
     doc.root.xpath('records/section/x') do |x|
-       html = RDiscount.new(Martile.new(x.text).to_html).to_html
-       e = x.parent
-       x.delete
-       e.add Rexle.new("<x>%s</x>" % html).root
+
+      s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text]
+      html = Martile.new(s).to_html
+
+      e = x.parent
+      x.delete
+      doc2 = Rexle.new(html)
+      
+      h1 = doc2.root.element('h1')
+      details = Rexle::Element.new('details')
+      summary = Rexle::Element.new('summary')
+      summary.add h1
+
+      details.add summary
+      doc2.root.xpath('.').each {|x| details.add x }     
+      doc2.root.add details
+      e.add doc2.root
     end
 
     File.write newfilepath, doc.xml(pretty: true)
+    
+    lib = File.dirname(__FILE__)
+    xslt_buffer = File.read File.join(lib,'liveblog.xsl')
+    xslt  = Nokogiri::XSLT(xslt_buffer)
+    out = xslt.transform(Nokogiri::XML(doc.xml))
+    File.write File.join(path(), 'index.html'), out
     
   end
 

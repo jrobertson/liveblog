@@ -5,6 +5,7 @@
 require 'time'
 require 'dynarex'
 require 'fileutils'
+require 'martile'
 
 class LiveBlog
 
