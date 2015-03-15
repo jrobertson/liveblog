@@ -9,11 +9,12 @@ require 'martile'
 
 class LiveBlog
 
-  def initialize(liveblogfilepath='.', urlbase: '/liveblog', edit_url: '/')
+  def initialize(liveblogfilepath='.', urlbase: '/liveblog', edit_url: '/', \
+                                             css_url: '/liveblog/liveblog.css')
 
     Dir.chdir liveblogfilepath
     
-    @urlbase, @edit_url = urlbase, edit_url
+    @urlbase, @edit_url, @css_url = urlbase, edit_url, css_url
     @t = Time.now
     dxfile = File.join(path(), 'index.xml')
 
@@ -41,6 +42,29 @@ class LiveBlog
     [true, "%s %s/%s/%s" % [entry, @urlbase, path(), hashtag]]
   end    
 
+  def new_file(s=nil)
+
+s ||= <<EOF    
+<?dynarex schema="sections[title, edit_url, date, css_url]/section(x)"?>
+title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
+edit_url: #{@edit_url}
+date: #{Date.today}
+css_url: #{@css_url}
+--#
+
+EOF
+
+    FileUtils.mkdir_p path()
+
+    @dx = Dynarex.new 
+    @dx.import s
+    @dx.default_key = 'uid'
+    
+    save()
+    
+  end
+  
+  alias import new_file  
   
   private
 
@@ -60,28 +84,7 @@ class LiveBlog
     @dx.create({x: raw_entry})    
     [true, 'section added']
   end  
-  
-  def new_file
-
-s =<<EOF    
-<?dynarex schema="sections[title, edit_url, date]/section(x)"?>
-title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
-edit_url: #{@edit_url}
-date: #{Date.today}
---#
-
-EOF
-
-
-    FileUtils.mkdir_p path()
-
-    @dx = Dynarex.new 
-    @dx.import s
-    @dx.default_key = 'uid'
     
-    save()
-    
-  end
   
   def path
 
@@ -103,6 +106,11 @@ EOF
     
     doc = Rexle.new File.read(newfilepath)
     
+    summary = doc.root.element('summary')
+    summary.element('edit_url').text += "%s/%s/index.txt" % [@url_edit, path()]
+    date = summary.element('date')
+    date.text = Date.parse(date.text).strftime("%d-%b-%Y").upcase
+
     doc.root.xpath('records/section/x') do |x|
 
       s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text]
@@ -132,6 +140,12 @@ EOF
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))
     File.write File.join(path(), 'index.html'), out
+    
+    # save the related CSS file locally if the file doesn't already exist
+    if not File.exists? 'liveblog.css' then
+      FileUtils.cp File.join(File.dirname(__FILE__), 'liveblog.css'),\
+                            'liveblog.css' if not File.exists? 'liveblog.css'
+    end
     
   end
 
