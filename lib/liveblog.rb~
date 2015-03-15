@@ -118,7 +118,7 @@ EOF
 
     File.write newfilepath, doc.xml(pretty: true)
     
-    lib = '.' # File.dirname(__FILE__)
+    lib = File.dirname(__FILE__)
     xslt_buffer = File.read File.join(lib,'liveblog.xsl')
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))

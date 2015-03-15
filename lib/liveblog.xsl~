@@ -10,9 +10,12 @@
   </head>
   <body>
     <xsl:for-each select="records/section/section">
+<xsl:text>
+</xsl:text>
+<xsl:copy-of select='.'/>
 
-       <xsl:copy-of select='.'/>
-
+  <xsl:text>
+</xsl:text>
     </xsl:for-each>
   </body>
 </html>
