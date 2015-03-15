@@ -31,10 +31,10 @@ class LiveBlog
     else [false, 'no valid entry found']
     end
     
-    return msg unless success
+    return [false, msg] unless success
     
     save()
-    "%s %s/%s/index.html%s" % [raw_entry, @urlbase, path(), hashtag]     
+    [true, "%s %s/%s/index.html%s" % [raw_entry, @urlbase, path(), hashtag]]
   end    
 
   
@@ -61,7 +61,7 @@ class LiveBlog
 
 s =<<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
-title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")} 
+title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
 --#
 
 EOF
