@@ -23,18 +23,22 @@ class LiveBlog
   
   def add_entry(raw_entry)
 
-    hashtag = raw_entry[/#\w+$/]
+    entry, hashtag = raw_entry.split(/\s*(?=#\w+$)/)    
     
     success, msg = case raw_entry
     when /^#\s*\w.*#\w+$/ then add_section raw_entry
-    when /#\w+$/ then add_section_entry raw_entry, hashtag      
+    when /#\w+$/ then add_section_entry entry, hashtag      
     else [false, 'no valid entry found']
     end
     
     return [false, msg] unless success
     
     save()
-    [true, "%s %s/%s/index.html%s" % [raw_entry, @urlbase, path(), hashtag]]
+    
+    # we reserve 30 characters for the link
+    len = (140 - 30 - hashtag.length)
+    entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
+    [true, "%s %s/%s/%s" % [entry, @urlbase, path(), hashtag]]
   end    
 
   
@@ -47,7 +51,7 @@ class LiveBlog
     
     return [false, 'rec not found'] unless rec
           
-    rec.x += "\n\n" + raw_entry.rstrip
+    rec.x += "\n\n" + raw_entry.chomp + "\n"
     [true, 'entry added to section ' + hashtag]
   end
   
@@ -107,6 +111,7 @@ EOF
       
       h1 = doc2.root.element('h1')
       details = Rexle::Element.new('details')
+      details.attributes[:open] = 'open'
       summary = Rexle::Element.new('summary')
       summary.add h1
 
@@ -118,8 +123,9 @@ EOF
 
     File.write newfilepath, doc.xml(pretty: true)
     
-    lib = File.dirname(__FILE__)
-    xslt_buffer = File.read File.join(lib,'liveblog.xsl')
+    lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)
+    xslt_buffer = File.read(File.join(lib,'liveblog.xsl'))
+
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))
     File.write File.join(path(), 'index.html'), out

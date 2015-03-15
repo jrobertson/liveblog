@@ -9,11 +9,11 @@ require 'martile'
 
 class LiveBlog
 
-  def initialize(liveblogfilepath='.', urlbase: '/liveblog')
+  def initialize(liveblogfilepath='.', urlbase: '/liveblog', edit_url: '/')
 
     Dir.chdir liveblogfilepath
     
-    @urlbase = urlbase
+    @urlbase, @edit_url = urlbase, edit_url
     @t = Time.now
     dxfile = File.join(path(), 'index.xml')
 
@@ -64,11 +64,14 @@ class LiveBlog
   def new_file
 
 s =<<EOF    
-<?dynarex schema="sections[title]/section(x)"?>
+<?dynarex schema="sections[title, edit_url, date]/section(x)"?>
 title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
+edit_url: #{@edit_url}
+date: #{Date.today}
 --#
 
 EOF
+
 
     FileUtils.mkdir_p path()
 

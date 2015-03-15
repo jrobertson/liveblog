@@ -9,11 +9,34 @@
     <title><xsl:value-of select='summary/title'/></title>
   </head>
   <body>
-    <xsl:for-each select="records/section/section">
+  
+  <header>
+    <nav>
+      <ul>
+        <li>
+          <a href="/">home</a>
+        </li>
+        <li>
+          <a href="/liveblog">liveblog</a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <div>
+    <ul>
+      <li>
+        <a href="{summary/edit_url}">edit</a>
+      </li>
+    </ul>
+  </div>
+  
+  <h1><xsl:value-of select='summary/date'/></h1>
+  
+  <xsl:for-each select="records/section/section">
 
-       <xsl:copy-of select='.'/>
+     <xsl:copy-of select='.'/>
 
-    </xsl:for-each>
+  </xsl:for-each>
   </body>
 </html>
   </xsl:template>
