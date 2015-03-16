@@ -45,7 +45,7 @@ class LiveBlog
   def new_file(s=nil)
 
 s ||= <<EOF    
-<?dynarex schema="sections[title, edit_url, date, css_url]/section(x)"?>
+<?dynarex schema="sections[title, edit_url, date, css_url]/section(x)" order='descending'?>
 title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
 edit_url: #{@edit_url}
 date: #{Date.today}
@@ -113,7 +113,7 @@ EOF
 
     doc.root.xpath('records/section/x') do |x|
 
-      s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text]
+      s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text.unescape]
       html = Martile.new(s).to_html
 
       e = x.parent
