@@ -110,6 +110,16 @@ EOF
     summary.element('edit_url').text += "%s/%s/index.txt" % [@url_edit, path()]
     date = summary.element('date')
     date.text = Date.parse(date.text).strftime("%d-%b-%Y").upcase
+    summary.add Rexle::Element.new('published').add_text Time.now.strftime("%d-%m-%Y %H:%M")
+  
+    tags = Rexle::Element.new('tags')
+    
+    doc.root.xpath('records/section/x/text()').each do |x| 
+      tags.add Rexle::Element.new('tag').add_text x.lines.first[/#(\w+)$/,1]
+    end
+    
+    summary.add tags
+
 
     doc.root.xpath('records/section/x') do |x|
 

@@ -6,7 +6,7 @@ body { background-color: #c48f33;}
     border-top: 1px solid rgba(100,150,100,0.4);
     border-bottom: 1px solid rgba(100,150,100,0.4);
     overflow: hidden
-    margin: 0.3em;  padding: 0.3em 0.1em;
+    margin: 0.3em; padding: 0.3em 0.1em;
   }
 
   header>nav:first-child>ul{
@@ -30,15 +30,58 @@ body { background-color: #c48f33;}
   header>nav>ul>li>a:hover {background-color: transparent; color: #272;}
   header>nav>ul>li>a:focus {background-color: #161; color: #fff;}
   header>nav>ul>li>a:active {background-color: rgba(200,200,200,0.4); color: #5a5;}
+
+#summary {
+  background-color: transparent;
+  color: #AFC332;
+  float: left;
+  margin: 1em 2em;
+  max-width: 620px;
+}
+
+#summary ul {
+  background-color: #D5A95D;
+  list-style-type: square;
+  margin: 1.4em; padding: 1.8em;
+}
+
+#summary ul li {
+  background-color: #D5A95D;
+  font-family: arial, verdana;
+  font-size: 1.4em;
+  margin: 0.2em 2em; padding: 0.8em;
+}
+
+#summary ul li a {
+  background-color: transparent;
+  color: #8E32C3;
+  text-decoration: none;
+  padding: 0.4em;
+}
+#summary ul li a:link {
+  background-color: transparent;
+}
+
+#summary ul li a:visited {
+  background-color: rgba(100,100,100,0.1);
+}
+
+#summary ul li a:hover {
+  background-color: transparent;
+  color: #C332AF;
+}
+
 article {
   background-color: #AFC332;
-
-  overflow: hidden;
+}
+details ol li {
+  background-color: #AFC332;
+  background-color: transparent;
+  margin: 0.3em; padding: 0.6em;
 }
 section {
   background-color: #E2C38D;
   color: #4532C3;
-  float: left;
   font-size: 1.2em;
   margin: 1.7em 0.7em 1.7em 1.7em; padding: 2.0em 4.6em;
   max-width: 500px
@@ -79,7 +122,8 @@ section a:active {
 
 
 
-article aside {
+aside {
+  background-color: #eee;
   background-color: transparent;
   color: #c48f33;
   float: right;
@@ -115,3 +159,46 @@ aside ul li a:hover {
   color: #eee;
   text-decoration: none;
 }
+
+article>footer{
+    background-color: rgba(255,255,255,0.2);
+}
+
+  article>footer>dl#info{
+    background-color: transparent;
+
+    margin: 1.9em 0 0 0; padding: 2em;
+    width: 33em;
+    overflow: hidden;
+  }
+
+  article>footer>dl#info{
+    background-color: transparent;
+    margin: 4.1em 0 0.1em 0;
+  }
+    article>footer>dl#info dt{
+      background-color: transparent;
+      float: left;
+      font:15px arial,sans-serif;
+      padding: 0.2em 0;
+      margin: 0.1em 0 0.1em 0;
+      text-align: left;
+      width: 4.8em;
+    }
+    article>footer>dl#info dd{
+      background-color: transparent;
+      float: left;
+      margin: 0.1em 0; padding: 0.2em 0.2em;
+      width: 27em;
+    }
+      article>footer>dl#info ul{
+        background-color: transparent;    
+        list-style-type: none;        
+        margin: 0 0em; padding: 0 0em;
+      }
+        dl#info ul li {
+          background-color: transparent;
+          float: left;
+          padding: 0em 0.5em  0 0;
+          margin: 0em;
+        }

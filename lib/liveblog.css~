@@ -6,7 +6,7 @@ body { background-color: #c48f33;}
     border-top: 1px solid rgba(100,150,100,0.4);
     border-bottom: 1px solid rgba(100,150,100,0.4);
     overflow: hidden
-    margin: 0.3em; 0.1em; padding: 0.3em 0.1em;
+    margin: 0.3em;  padding: 0.3em 0.1em;
   }
 
   header>nav:first-child>ul{

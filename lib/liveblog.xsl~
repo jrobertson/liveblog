@@ -31,11 +31,12 @@
   </div>
   
   <h1><xsl:value-of select='summary/date'/></h1>
-    <xsl:for-each select="records/section/section">
+  
+  <xsl:for-each select="records/section/section">
 
-       <xsl:copy-of select='.'/>
+     <xsl:copy-of select='.'/>
 
-    </xsl:for-each>
+  </xsl:for-each>
   </body>
 </html>
   </xsl:template>
