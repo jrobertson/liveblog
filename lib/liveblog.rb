@@ -6,6 +6,7 @@ require 'time'
 require 'dynarex'
 require 'fileutils'
 require 'martile'
+require 'simple-config'
 
 class LiveBlog
 
