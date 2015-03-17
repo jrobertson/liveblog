@@ -36,6 +36,7 @@
   <aside>
   <ul>
     <li><xsl:value-of select='summary/date'/></li>
+    <li><a href='{summary/prev_day}' class='arrow'>&#8592;</a><a href='{summary/next_day}' class='arrow'>&#8594;</a></li>    
     <li>
       <a href="{summary/edit_url}" rel="nofollow">edit</a>
     </li>      

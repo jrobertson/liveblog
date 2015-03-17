@@ -9,16 +9,29 @@ require 'martile'
 
 class LiveBlog
 
-  def initialize(liveblogfilepath='.', urlbase: '/liveblog', edit_url: '/', \
-                                             css_url: '/liveblog/liveblog.css')
+  def initialize(config: nil)
 
-    Dir.chdir liveblogfilepath
+
+    config ||= 'liveblog.conf' 
+    h = SimpleConfig.new(config).to_h
+    dir, @urlbase, @edit_url, @css_url = %i(dir urlbase edit_url css_url).map{|x| h[x]}
+
     
-    @urlbase, @edit_url, @css_url = urlbase, edit_url, css_url
-    @t = Time.now
+    Dir.chdir dir    
+
+    @d = Date.today
     dxfile = File.join(path(), 'index.xml')
 
-    File.exists?(dxfile) ? @dx = Dynarex.new(dxfile) : new_file()      
+    if File.exists? dxfile then 
+    
+      @dx = Dynarex.new(dxfile)
+      @d = Date.parse @dx.title
+      
+    else
+      
+      new_file()
+      
+    end
       
   end
   
@@ -39,22 +52,32 @@ class LiveBlog
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
-    [true, "%s %s/%s/%s" % [entry, @urlbase, path(), hashtag]]
-  end    
+    [true, "%s %s%s" % [entry, static_urlpath(), hashtag]]
+  end
+  
+  # Use with yesterday's liveblog; Ideally suited for running from a cron job
+  #
+  def link_today()
+    
+    newfilepath = File.join(path(@d-1), 'formatted.xml')
+    FileUtils.cp File.join(path(@d-1), 'index.xml'), newfilepath
+    
+    doc = Rexle.new File.read(newfilepath)    
+    doc.root.element('summary/next_day').text = static_urlpath()
+    File.write newfilepath, doc.xml(pretty: true)
+    
+  end
 
   def new_file(s=nil)
 
 s ||= <<EOF    
-<?dynarex schema="sections[title, edit_url, date, css_url]/section(x)" order='descending'?>
-title: LiveBlog #{ordinalize(@t.day) + @t.strftime(" %B %Y")}
-edit_url: #{@edit_url}
-date: #{Date.today}
-css_url: #{@css_url}
+<?dynarex schema="sections[title]/section(x)" order='descending'?>
+title: LiveBlog #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
 --#
 
 EOF
 
-    FileUtils.mkdir_p path()
+    FileUtils.mkdir_p File.join(path())
 
     @dx = Dynarex.new 
     @dx.import s
@@ -86,12 +109,19 @@ EOF
   end  
     
   
-  def path
-
-    File.join [@t.year.to_s, Date::MONTHNAMES[@t.month].downcase[0..2], \
-                                                                @t.day.to_s]
+  def path(d=@d)
+    [d.year.to_s, Date::MONTHNAMES[d.month].downcase[0..2], d.day.to_s]
   end
   
+  def urlpath(d=@d)
+    path(d).join('/') + '/'
+  end
+  
+  def static_urlpath(d=@d)
+    @urlbase.sub(/[^\/]$/,'\0/') + urlpath(d)
+  end
+  
+    
   def save()
     
     @dx.save File.join(path(), 'index.xml')
@@ -102,15 +132,17 @@ EOF
   def save_html()
     
     newfilepath = File.join(path(), 'formatted.xml')
-    FileUtils.cp File.join(path(), 'index.xml'), newfilepath
-    
+    FileUtils.cp File.join(path(), 'index.xml'), newfilepath    
     doc = Rexle.new File.read(newfilepath)
     
     summary = doc.root.element('summary')
-    summary.element('edit_url').text += "%s/%s/index.txt" % [@url_edit, path()]
-    date = summary.element('date')
-    date.text = Date.parse(date.text).strftime("%d-%b-%Y").upcase
-    summary.add Rexle::Element.new('published').add_text Time.now.strftime("%d-%m-%Y %H:%M")
+
+    add summary, 'edit_url', "%s/%sindex.txt" % [@edit_url, urlpath()]
+    add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
+    add summary, 'css_url',   @css_url
+    add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
+    add summary, 'prev_day',  static_urlpath(@d-1)
+    add summary, 'next_day', @d == Date.today ? '' : static_urlpath(@d+1)
   
     tags = Rexle::Element.new('tags')
     
@@ -119,7 +151,6 @@ EOF
     end
     
     summary.add tags
-
 
     doc.root.xpath('records/section/x') do |x|
 
@@ -163,5 +194,9 @@ EOF
     n.to_s + ( (10...20).include?(n) ? 'th' : 
               %w{ th st nd rd th th th th th th }[n % 10] )
   end  
+
+  def add(summary, name, s)
+    summary.add Rexle::Element.new(name).add_text s
+  end
   
 end
