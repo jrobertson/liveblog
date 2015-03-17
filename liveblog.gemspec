@@ -12,5 +12,5 @@ Gem::Specification.new do |s|
   s.license = 'MIT'
   s.email = 'james@r0bertson.co.uk'
   s.homepage = 'https://github.com/jrobertson/liveblog'
-  s.required_ruby_version = '>= 2.2.0'
+  s.required_ruby_version = '>= 2.1.2'
 end
