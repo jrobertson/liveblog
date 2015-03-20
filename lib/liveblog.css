@@ -72,28 +72,33 @@ body { background-color: #c48f33;}
           color: #C332AF;
         }
 
-.arrow {
+.arrow, .deadarrow {
   background-color: #444;
   background-color: transparent;
   font-size: 3em;
 }
-.arrow:first-child {
-  background-color: transparent;
+  .arrow:first-child {
+    background-color: transparent;
 
-}
-.arrow:last-child {
-  background-color: transparent;
-  float: right;
-}
+  }
+  .arrow:last-child, .deadarrow:last-child {
+    background-color: transparent;
+    float: right;
+  }
 
-.arrow:link {
-  background-color: transparent;
-  color: rgba(100,200,100, 0.3);
-}
-.arrow:hover {
-  background-color: transparent;
-  color: rgba(255,255,255, 0.8)
-}
+  .arrow:link {
+    background-color: transparent;
+    color: rgba(100,200,100, 0.6);
+  }
+
+  .deadarrow:link {
+    background-color: transparent;
+    color: rgba(100,200,100, 0.2);
+  }
+  .arrow:hover {
+    background-color: transparent;
+    color: rgba(255,255,255, 0.8)
+  }
 
 
 
@@ -237,3 +242,8 @@ article>footer, aside ul li{
           padding: 0em 0.5em  0 0;
           margin: 0em;
         }
+
+pre, output {
+  background-color: rgba(200,200,200,0.4);
+  font-size: 0.6em;
+}

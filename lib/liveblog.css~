@@ -39,40 +39,72 @@ body { background-color: #c48f33;}
   max-width: 620px;
 }
 
-#summary ul {
-  background-color: #D5A95D;
-  list-style-type: square;
-  margin: 1.4em; padding: 1.8em;
-}
+  #summary ul {
+    background-color: #D5A95D;
+    list-style-type: square;
+    margin: 1.4em; padding: 1.8em;
+  }
 
-#summary ul li {
-  background-color: #D5A95D;
-  font-family: arial, verdana;
-  font-size: 1.4em;
-  margin: 0.2em 2em; padding: 0.8em;
-}
+    #summary ul li {
+      background-color: #D5A95D;
+      font-family: arial, verdana;
+      font-size: 1.4em;
+      margin: 0.2em 2em; padding: 0.8em;
+    }
 
-#summary ul li a {
+      #summary ul li a {
+        background-color: transparent;
+        color: #8E32C3;
+        text-decoration: none;
+        padding: 0.4em;
+      }
+
+        #summary ul li a:link {
+          background-color: transparent;
+        }
+
+        #summary ul li a:visited {
+          background-color: rgba(100,100,100,0.1);
+        }
+
+        #summary ul li a:hover {
+          background-color: transparent;
+          color: #C332AF;
+        }
+
+.arrow {
+  background-color: #444;
   background-color: transparent;
-  color: #8E32C3;
-  text-decoration: none;
-  padding: 0.4em;
+  font-size: 3em;
 }
-#summary ul li a:link {
+.arrow:first-child {
   background-color: transparent;
+
+}
+.arrow:last-child {
+  background-color: transparent;
+  float: right;
 }
 
-#summary ul li a:visited {
-  background-color: rgba(100,100,100,0.1);
+.arrow:link {
+  background-color: transparent;
+  color: rgba(100,200,100, 0.3);
+}
+.arrow:hover {
+  background-color: transparent;
+  color: rgba(255,255,255, 0.8)
 }
 
-#summary ul li a:hover {
-  background-color: transparent;
-  color: #C332AF;
-}
+
 
 article {
   background-color: #AFC332;
+}
+
+article strong{
+  background-color: transparent;
+  font-size: 1.27em;
+  padding: 0.1em 0.1em;
 }
 details ol li {
   background-color: #AFC332;
@@ -87,38 +119,39 @@ section {
   max-width: 500px
 }
 
-section h1 {
-  background-color: #D5A95D;
-  /*color: #C34532;*/
-  margin: 0.4em 0em 1.2em 0em;
-  padding: 1em 1.5em;
-}
+  section h1 {
+    background-color: #D5A95D;
+    /*color: #C34532;*/
+    margin: 0.4em 0em 1.2em 0em;
+    padding: 1em 1.5em;
+  }
 
-section p {
+  section p {
+    background-color: #ee3;
+    background-color: transparent;
+    margin: 0.4em 0.4em; padding: 0.6em 1.5em;
+  }
 
-  background-color: #ee3;
-  background-color: transparent;
-  margin: 0.4em 0.4em; padding: 0.6em 1.5em;
-}
-section a {
-  background-color: transparent;
-  color: #8E32C3;
-  text-decoration: none;
-}
-section a:link {
-  background-color: transparent;
-  color: #911;
-}
+  section a {
+    background-color: transparent;
+    color: #8E32C3;
+    text-decoration: none;
+  }
 
-section a:hover {
-  background-color: transparent;
-  color: #C33267;
-}
+    section a:link {
+      background-color: transparent;
+      color: #911;
+    }
 
-section a:active {
-  background-color: #ddd;
-  color: #C33267;
-}
+    section a:hover {
+      background-color: transparent;
+      color: #C33267;
+    }
+
+    section a:active {
+      background-color: #ddd;
+      color: #C33267;
+    }
 
 
 
@@ -137,30 +170,32 @@ aside ul {
   padding: 0.6em 0.9em;
 }
 
-aside ul li {
-  background-color: #e33;
-  background-color: transparent;
-  font-family: helvetica, arial;
-  font-size: 2.6em;
-  font-weight: 900;
+  aside ul li {
+    background-color: transparent;
+    background-color: #e33;
 
-  margin: 0.4em; 
-  padding: 0.9em;
-}
+    font-family: helvetica, arial;
+    font-size: 2.6em;
+    font-weight: 900;
 
-aside ul li a{
-  background-color: transparent;
-  color: #eee;
-  text-decoration: none;
-}
+    margin: 0.4em; 
+    padding: 0.9em;
+    text-align: center;
+  }
 
-aside ul li a:hover {
-  background-color: rgba(100, 100, 100, 0.5);
-  color: #eee;
-  text-decoration: none;
-}
+    aside ul li a{
+      background-color: transparent;
+      color: #eee;
+      text-decoration: none;
+    }
 
-article>footer{
+      aside ul li a:hover {
+        background-color: rgba(100, 100, 100, 0.5);
+        color: #eee;
+        text-decoration: none;
+      }
+
+article>footer, aside ul li{
     background-color: rgba(255,255,255,0.2);
 }
 

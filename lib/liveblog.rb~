@@ -31,6 +31,7 @@ class LiveBlog
     else
       
       new_file()
+      link_today()
       
     end
       
@@ -53,19 +54,24 @@ class LiveBlog
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
-    [true, "%s %s%s" % [entry, static_urlpath(), hashtag]]
+    message = "%s %s%s" % [entry, static_urlpath(), hashtag]
+    
+    [true, message]
   end
   
-  # Use with yesterday's liveblog; Ideally suited for running from a cron job
+  # Use with yesterday's liveblog; 
   #
   def link_today()
     
     newfilepath = File.join(path(@d-1), 'formatted.xml')
-    FileUtils.cp File.join(path(@d-1), 'index.xml'), newfilepath
-    
+
+    return unless File.exists? newfilepath
+
     doc = Rexle.new File.read(newfilepath)    
     doc.root.element('summary/next_day').text = static_urlpath()
     File.write newfilepath, doc.xml(pretty: true)
+    
+    render_html doc, @d-1
     
   end
 
@@ -95,7 +101,7 @@ EOF
   
   def add_section_entry(raw_entry, hashtag)
     
-    rec = @dx.all.find {|section| section.x.lstrip.lines.first =~ /#{hashtag}/}
+    rec = @dx.all.find {|section| section.x.lstrip.lines.first =~ /#{hashtag}/i}
     
     return [false, 'rec not found'] unless rec
           
@@ -138,7 +144,7 @@ EOF
     
     summary = doc.root.element('summary')
 
-    add summary, 'edit_url', "%s/%sindex.txt" % [@edit_url, urlpath()]
+    add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
     add summary, 'css_url',   @css_url
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
@@ -176,17 +182,12 @@ EOF
 
     File.write newfilepath, doc.xml(pretty: true)
     
-    lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)
-    xslt_buffer = File.read(File.join(lib,'liveblog.xsl'))
-
-    xslt  = Nokogiri::XSLT(xslt_buffer)
-    out = xslt.transform(Nokogiri::XML(doc.xml))
-    File.write File.join(path(), 'index.html'), out
+    render_html doc
     
     # save the related CSS file locally if the file doesn't already exist
     if not File.exists? 'liveblog.css' then
       FileUtils.cp File.join(File.dirname(__FILE__), 'liveblog.css'),\
-                            'liveblog.css' if not File.exists? 'liveblog.css'
+                                                                 'liveblog.css'
     end
     
   end
@@ -199,5 +200,15 @@ EOF
   def add(summary, name, s)
     summary.add Rexle::Element.new(name).add_text s
   end
+
+  def render_html(doc, d=@d)
+    
+    lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)
+    xslt_buffer = File.read(File.join(lib,'liveblog.xsl'))
+
+    xslt  = Nokogiri::XSLT(xslt_buffer)
+    out = xslt.transform(Nokogiri::XML(doc.xml))
+    File.write File.join(path(d), 'index.html'), out    
+  end  
   
 end
