@@ -1,4 +1,7 @@
-body { background-color: #c48f33;}
+body { 
+  background-color: #c48f33;
+  max-width: 1000px;
+}
 
 
   header{
@@ -35,21 +38,21 @@ body { background-color: #c48f33;}
   background-color: transparent;
   color: #AFC332;
   float: left;
-  margin: 1em 2em;
-  max-width: 620px;
+  margin: 1em 1em;
+  max-width: 560px;
 }
 
   #summary ul {
     background-color: #D5A95D;
     list-style-type: square;
-    margin: 1.4em; padding: 1.8em;
+    margin: 0.9em; padding: 1.3em;
   }
 
     #summary ul li {
       background-color: #D5A95D;
       font-family: arial, verdana;
-      font-size: 1.4em;
-      margin: 0.2em 2em; padding: 0.8em;
+      font-size: 1.3em;
+      margin: 0.2em 1.4em; padding: 0.5em;
     }
 
       #summary ul li a {
@@ -120,7 +123,8 @@ section {
   background-color: #E2C38D;
   color: #4532C3;
   font-size: 1.2em;
-  margin: 1.7em 0.7em 1.7em 1.7em; padding: 2.0em 4.6em;
+  margin: 1.7em 0.7em 1.7em 1.7em; padding: 2.0em 2.0em 2.0em 2.0em;
+  padding-bottom: 5em;
   max-width: 500px
 }
 
@@ -134,7 +138,8 @@ section {
   section p {
     background-color: #ee3;
     background-color: transparent;
-    margin: 0.4em 0.4em; padding: 0.6em 1.5em;
+    font-size: 1.1em;
+    margin: 0.4em 0.4em; padding: 0.6em 0.7em;
   }
 
   section a {
@@ -180,7 +185,7 @@ aside ul {
     background-color: #e33;
 
     font-family: helvetica, arial;
-    font-size: 2.6em;
+    font-size: 2.0em;
     font-weight: 900;
 
     margin: 0.4em; 
@@ -245,5 +250,8 @@ article>footer, aside ul li{
 
 pre, output {
   background-color: rgba(200,200,200,0.4);
-  font-size: 0.6em;
+  font-size: 0.7em;
+  margin: 0.4em; padding: 0.6em;
+  overflow-x: scroll;
+
 }

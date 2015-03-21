@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="html" encoding="utf-8" indent="yes" />
 
@@ -10,7 +10,7 @@
     <link rel='stylesheet' type='text/css' href='{summary/css_url}' media='screen, projection, tv, print'/>
   </head>
   <body>
-  
+  <div id="wrap">
   <header>
     <nav>
       <ul>
@@ -24,6 +24,9 @@
     </nav>
   </header>
   
+  <xsl:if test='summary/bannertext'>
+    <p><xsl:value-of select='summary/bannertext'/></p>
+  </xsl:if>
   
   <div id='summary'>
   <ul>
@@ -35,7 +38,12 @@
   </div>
   <aside>
   <ul>
-    <li><xsl:value-of select='summary/date'/></li>
+    <li>
+      <xsl:value-of select='summary/date'/>      
+    </li>
+    <li>
+      <xsl:value-of select='summary/day'/>
+    </li>    
     <li>
       <a href='{summary/prev_day}' class='arrow'>&#8592;</a>
       <xsl:element name="a">
@@ -82,7 +90,7 @@
         </dl>
       </footer>  
   </article>
-  
+  </div>
   </body>
 </html>
   </xsl:template>

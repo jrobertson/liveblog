@@ -39,12 +39,22 @@ class LiveBlog
   
   def add_entry(raw_entry)
 
-    entry, hashtag = raw_entry.split(/\s*(?=#\w+$)/)    
+    entry, hashtag = raw_entry.split(/\s*(?=#\w+$)/)
+    hashtag.downcase!
     
     success, msg = case raw_entry
-    when /^#\s*\w.*#\w+$/ then add_section raw_entry
-    when /#\w+$/ then add_section_entry entry, hashtag      
-    else [false, 'no valid entry found']
+    
+    when /^#\s*\w.*#\w+$/ then
+      
+      add_section raw_entry
+      
+    when /#\w+$/ then 
+      
+      entry.gsub!(/\B!t\b/, time())
+      add_section_entry entry, hashtag      
+      
+    else 
+      [false, 'no valid entry found']
     end
     
     return [false, msg] unless success
@@ -53,6 +63,7 @@ class LiveBlog
     
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
+    raw_entry.gsub!(/\B!t\b/,'')
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
     message = "%s %s%s" % [entry, static_urlpath(), hashtag]
     
@@ -83,6 +94,28 @@ title: LiveBlog #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
 --#
 
 EOF
+
+    t = Time.now
+    # keyword substitions
+    # a !t becomes the Time.now.strftime("%-I:%M%P") #=> 4:27pm
+    s.gsub!(/\B\*started\s+<time>(\d+:\d+[ap]m)<\/time>\*\B\s*!tc/) do |x|
+
+      raw_start_time = $1
+
+      start_time = Time.parse raw_start_time
+      seconds = t - start_time
+      list = Subunit.new(units={minutes:60, hours:60}, seconds: seconds )\
+                                                                     .to_h.to_a
+      n = list.find {|_,v| v > 0 }
+      duration = list[list.index(n)..-2].map {|x|"%d %s" % x.reverse}\
+                                                                    .join(', ')
+      "*completed %s; duration: %s*" % [time(t), duration]
+    end
+    
+    s.gsub!(/\B!ts\b/, "*started #{time(t)}*")
+    s.gsub!(/\B!tc\b/, "*completed #{time(t)}*")
+    s.gsub!(/\B!t\b/,  time(t))
+
 
     FileUtils.mkdir_p File.join(path())
 
@@ -154,7 +187,8 @@ EOF
     tags = Rexle::Element.new('tags')
     
     doc.root.xpath('records/section/x/text()').each do |x| 
-      tags.add Rexle::Element.new('tag').add_text x.lines.first[/#(\w+)$/,1]
+      tags.add Rexle::Element.new('tag').add_text x.lines.first[/#(\w+)$/,1]\
+                                                                      .downcase
     end
     
     summary.add tags
@@ -209,6 +243,10 @@ EOF
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))
     File.write File.join(path(d), 'index.html'), out    
-  end  
+  end
+  
+  def time(t=Time.now)
+    t.strftime "<time>%-I:%M%P</time>"
+  end
   
 end
