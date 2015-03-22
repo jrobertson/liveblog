@@ -180,7 +180,7 @@ EOF
 
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
-    add summary, 'day',   @d.cwday.strftime("%A")
+    add summary, 'day',   @d.strftime("%A")
     add summary, 'css_url',   @css_url
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
     add summary, 'prev_day',  static_urlpath(@d-1)
