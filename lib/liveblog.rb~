@@ -15,7 +15,8 @@ class LiveBlog
 
     config ||= 'liveblog.conf' 
     h = SimpleConfig.new(config).to_h
-    dir, @urlbase, @edit_url, @css_url = %i(dir urlbase edit_url css_url).map{|x| h[x]}
+    dir, @urlbase, @edit_url, @css_url, @xsl_path, @xsl_url, @bannertext = \
+     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext).map{|x| h[x]}
 
     
     Dir.chdir dir    
@@ -50,7 +51,7 @@ class LiveBlog
       
     when /#\w+$/ then 
       
-      entry.gsub!(/\B!t\b/, time())
+      entry.gsub!(/(?:^|\s)!t\b/, time())
       add_section_entry entry, hashtag      
       
     else 
@@ -63,7 +64,7 @@ class LiveBlog
     
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
-    raw_entry.gsub!(/\B!t\b/,'')
+    raw_entry.gsub!(/(?:^|\s)!t\b/,'')
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
     message = "%s %s%s" % [entry, static_urlpath(), hashtag]
     
@@ -114,7 +115,7 @@ EOF
     
     s.gsub!(/\B!ts\b/, "*started #{time(t)}*")
     s.gsub!(/\B!tc\b/, "*completed #{time(t)}*")
-    s.gsub!(/\B!t\b/,  time(t))
+    s.gsub!(/(?:^|\s)!t\b/,  time(t))
 
 
     FileUtils.mkdir_p File.join(path())
@@ -157,7 +158,7 @@ EOF
     path(d).join('/') + '/'
   end
   
-  def static_urlpath(d=@d)
+  def static_urlpath(d=@d)      
     @urlbase.sub(/[^\/]$/,'\0/') + urlpath(d)
   end
   
@@ -179,10 +180,12 @@ EOF
 
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
+    add summary, 'day',   Date::DAYNAMES[@d.cwday]
     add summary, 'css_url',   @css_url
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
     add summary, 'prev_day',  static_urlpath(@d-1)
     add summary, 'next_day', @d == Date.today ? '' : static_urlpath(@d+1)
+    add summary, 'bannertext',   @bannertext    
   
     tags = Rexle::Element.new('tags')
     
@@ -192,11 +195,13 @@ EOF
     end
     
     summary.add tags
+    
+    domain = @urlbase[/https?:\/\/([^\/]+)/,1].split('.')[-2..-1].join('.')
 
     doc.root.xpath('records/section/x') do |x|
 
       s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text.unescape]
-      html = Martile.new(s).to_html
+      html = Martile.new(s, ignore_domainlabel: domain).to_html
 
       e = x.parent
       x.delete
@@ -213,7 +218,12 @@ EOF
       doc2.root.add details
       e.add doc2.root
     end
-
+    
+    doc.instructions << [
+      'xml-stylesheet',
+      "title='XSL_formatting' type='text/xsl' href='#{@xsl_url}'"
+    ]
+    
     File.write newfilepath, doc.xml(pretty: true)
     
     render_html doc
@@ -236,9 +246,14 @@ EOF
   end
 
   def render_html(doc, d=@d)
-    
-    lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)
-    xslt_buffer = File.read(File.join(lib,'liveblog.xsl'))
+
+    xslt_buffer = if @xsl_path then
+      buffer, _ = RXFHelper.read @xsl_path
+      buffer
+    else
+      lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)
+      File.read(File.join(lib,'liveblog.xsl'))
+    end
 
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))

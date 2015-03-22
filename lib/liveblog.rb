@@ -51,7 +51,7 @@ class LiveBlog
       
     when /#\w+$/ then 
       
-      entry.gsub!(/(?:^|\s)!t\b/, time())
+      entry.gsub!(/(?:^|\s)!t\z/, time())
       add_section_entry entry, hashtag      
       
     else 
@@ -64,7 +64,7 @@ class LiveBlog
     
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
-    raw_entry.gsub!(/(?:^|\s)!t\b/,'')
+    raw_entry.gsub!(/(?:^|\s)!t\z/,'')
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
     message = "%s %s%s" % [entry, static_urlpath(), hashtag]
     
@@ -99,7 +99,7 @@ EOF
     t = Time.now
     # keyword substitions
     # a !t becomes the Time.now.strftime("%-I:%M%P") #=> 4:27pm
-    s.gsub!(/\B\*started\s+<time>(\d+:\d+[ap]m)<\/time>\*\B\s*!tc/) do |x|
+    s.gsub!(/\B\*started\s+<time>(\d+:\d+[ap]m)<\/time>\*\B\s*!tc\z/) do |x|
 
       raw_start_time = $1
 
@@ -113,9 +113,9 @@ EOF
       "*completed %s; duration: %s*" % [time(t), duration]
     end
     
-    s.gsub!(/\B!ts\b/, "*started #{time(t)}*")
-    s.gsub!(/\B!tc\b/, "*completed #{time(t)}*")
-    s.gsub!(/(?:^|\s)!t\b/,  time(t))
+    s.gsub!(/(?:^|\s)ts\z/, "*started #{time(t)}*")
+    s.gsub!(/(?:^|\s)!tc\z/, "*completed #{time(t)}*")
+    s.gsub!(/(?:^|\s)!t\z/,  time(t))
 
 
     FileUtils.mkdir_p File.join(path())
@@ -180,7 +180,7 @@ EOF
 
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
-    add summary, 'day',   Date::DAYNAMES[@d.cwday]
+    add summary, 'day',   @d.cwday.strftime("%A")
     add summary, 'css_url',   @css_url
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
     add summary, 'prev_day',  static_urlpath(@d-1)
