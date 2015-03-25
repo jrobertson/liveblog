@@ -52,7 +52,7 @@ class LiveBlog
       
     when /#\w+$/ then 
       
-      entry.gsub!(/(?:^|\s)!t\z/, time())
+      entry.gsub!(/(?:^|\s)!t\s/, '\1' + time())
       add_section_entry entry, hashtag      
       
     else 
@@ -116,7 +116,7 @@ EOF
     
     s.gsub!(/(?:^|\s)ts\z/, "*started #{time(t)}*")
     s.gsub!(/(?:^|\s)!tc\z/, "*completed #{time(t)}*")
-    s.gsub!(/(?:^|\s)!t\z/,  time(t))
+    s.gsub!(/(?:^|\s)!t\s/,  '\1' + time(t))
 
 
     FileUtils.mkdir_p File.join(path())
@@ -146,7 +146,7 @@ EOF
   
   def add_section(raw_entry)
 
-    @dx.create({x: raw_entry})    
+    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}})    
     [true, 'section added']
   end  
     
@@ -172,10 +172,11 @@ EOF
   end  
   
   def save_html()
+     
+    newfilepath2 = File.join(path(), 'formatted2.xml')
+    FileUtils.cp File.join(path(), 'index.xml'), newfilepath2
     
-    newfilepath = File.join(path(), 'formatted.xml')
-    FileUtils.cp File.join(path(), 'index.xml'), newfilepath    
-    doc = Rexle.new File.read(newfilepath)
+    doc = Rexle.new File.read(newfilepath2)
     
     summary = doc.root.element('summary')
 
@@ -225,7 +226,7 @@ EOF
       "title='XSL_formatting' type='text/xsl' href='#{@xsl_url}'"
     ]
     
-    File.write newfilepath, doc.xml(pretty: true)
+    File.write newfilepath2, doc.xml(pretty: true)
     
     render_html doc
     
@@ -234,6 +235,39 @@ EOF
       FileUtils.cp File.join(File.dirname(__FILE__), 'liveblog.css'),\
                                                                  'liveblog.css'
     end
+    
+    # create the new timestamps for formatted.xml
+    
+    newfilepath = File.join(path(), 'raw_formatted.xml')  
+    newfilepath3 = File.join(path(), 'formatted.xml')    
+    
+    (FileUtils.cp newfilepath2, newfilepath; return) unless File.exists? newfilepath
+
+    doc = RexleDiff.new(File.read(newfilepath), File.read(newfilepath2))\
+                                                                        .to_doc    
+    File.write newfilepath, doc.xml(pretty: true)
+    
+    doc.root.xpath('records/section/section').each do |node|
+
+      node.attributes[:created] ||= Time.now.to_s
+      t = Time.parse(node.attributes[:created]) 
+      element = Rexle::Element.new('time', value: t.strftime("%-I:%M%P"), \
+                                                 attributes: {class: 'border'})
+
+      node.element('details/summary').add element
+      
+      node.xpath('//p').each do |e|
+
+        e.attributes[:created] ||= Time.now.to_s
+        t = Time.parse(e.attributes[:created])
+        element = Rexle::Element.new('time', value: t.strftime("%-I:%M%P"), \
+                                                 attributes: {class: 'border'})
+        e.prepend element
+
+      end      
+    end
+
+    File.write newfilepath3, doc.xml(pretty: true)
     
   end
 

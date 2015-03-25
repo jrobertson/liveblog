@@ -132,21 +132,38 @@ section {
   font-size: 1.2em;
   margin: 1.7em 0.7em 1.7em 1.7em; padding: 2.0em 2.0em 2.0em 2.0em;
   padding-bottom: 5em;
-  max-width: 500px
+  max-width: 600px
 }
 
   section h1 {
     background-color: #D5A95D;
     /*color: #C34532;*/
-    margin: 0.4em 0em 1.2em 0em;
-    padding: 1em 1.5em;
+    margin: 0.4em 2.6em 1.0em 3.3em;
+    padding: 1em 1em 1em 1.4em;
+  }
+
+  section h1~time.border,  section p time.border {
+    background-color: rgba(160,160,140, 0.2);
+    color: rgba(90, 140, 90, 0.9);
+    padding: 0.2em 0.6em;
+  }
+  section h1~time.border {
+    font-size: 0.9em;
+    margin: 0.1em; padding: 0.4em;
+    position: relative;
+    left: -20px; top: -71px;
   }
 
   section p {
     background-color: #ee3;
     background-color: transparent;
     font-size: 1.1em;
-    margin: 0.4em 0.4em; padding: 0.6em 0.7em;
+    margin: 0.2em 1.95em 0.2em 1.55em; padding: 0.3em 2.2em 0.3em 3.6em;
+  }
+
+  section p time.border {
+    font-size: 0.8em;
+    margin: 0.1em 1.3em 0.4em -6.0em;
   }
 
     section p>code{
@@ -154,6 +171,16 @@ section {
       color: #486;
       padding: 0.1em 0.3em;
     }
+  section ul {
+    background-color: transparent;
+    font-size: 1.0em;
+    margin: 0.4em 1em 0.4em 3em;
+    padding: 0.7em 1em 0.7em 3.5em;
+  }
+    section ul li {
+      background-color: transparent;
+    }
+
 
   section a {
     background-color: transparent;
