@@ -254,8 +254,10 @@ EOF
       return 
     end
 
-    doc = RexleDiff.new(File.read(raw_formatted_filepath), File.read(formatted2_filepath))\
-                                                                        .to_doc    
+    buffer = File.read(raw_formatted_filepath)
+    buffer2 = File.read(formatted2_filepath)
+    doc = RexleDiff.new(buffer, buffer2, fuzzy_match: true).to_doc
+
     File.write raw_formatted_filepath, doc.xml(pretty: true)
 
     doc.root.xpath('records/section/section').each do |node|

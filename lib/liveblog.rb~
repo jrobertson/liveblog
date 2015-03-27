@@ -76,13 +76,13 @@ class LiveBlog
   #
   def link_today()
     
-    newfilepath = File.join(path(@d-1), 'formatted.xml')
+    raw_formatted_filepath = File.join(path(@d-1), 'formatted.xml')
 
-    return unless File.exists? newfilepath
+    return unless File.exists? raw_formatted_filepath
 
-    doc = Rexle.new File.read(newfilepath)    
+    doc = Rexle.new File.read(raw_formatted_filepath)    
     doc.root.element('summary/next_day').text = static_urlpath()
-    File.write newfilepath, doc.xml(pretty: true)
+    File.write raw_formatted_filepath, doc.xml(pretty: true)
     
     render_html doc, @d-1
     
@@ -173,12 +173,14 @@ EOF
   
   def save_html()
      
-    newfilepath2 = File.join(path(), 'formatted2.xml')
-    FileUtils.cp File.join(path(), 'index.xml'), newfilepath2
+    formatted2_filepath = File.join(path(), 'formatted2.xml')
+    FileUtils.cp File.join(path(), 'index.xml'), formatted2_filepath
     
-    doc = Rexle.new File.read(newfilepath2)
+    doc = Rexle.new File.read(formatted2_filepath)
     
     summary = doc.root.element('summary')
+    
+    summary.element('recordx_type').delete
 
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
@@ -226,27 +228,36 @@ EOF
       "title='XSL_formatting' type='text/xsl' href='#{@xsl_url}'"
     ]
     
-    File.write newfilepath2, doc.xml(pretty: true)
+    File.write formatted2_filepath, doc.xml(pretty: true)
     
-    render_html doc
+
     
     # save the related CSS file locally if the file doesn't already exist
     if not File.exists? 'liveblog.css' then
       FileUtils.cp File.join(File.dirname(__FILE__), 'liveblog.css'),\
                                                                  'liveblog.css'
     end
+        
+    raw_formatted_filepath = File.join(path(), 'raw_formatted.xml')  
+    formatted_filepath = File.join(path(), 'formatted.xml')    
     
-    # create the new timestamps for formatted.xml
-    
-    newfilepath = File.join(path(), 'raw_formatted.xml')  
-    newfilepath3 = File.join(path(), 'formatted.xml')    
-    
-    (FileUtils.cp newfilepath2, newfilepath; return) unless File.exists? newfilepath
+    unless File.exists? raw_formatted_filepath then
 
-    doc = RexleDiff.new(File.read(newfilepath), File.read(newfilepath2))\
+      doc2 = doc.root.deep_clone
+
+      doc2.root.traverse do |node|
+        node.attributes[:created] = Time.now.to_s
+      end
+      
+      File.write raw_formatted_filepath, doc2.xml(pretty: true)
+      
+      return 
+    end
+
+    doc = RexleDiff.new(File.read(raw_formatted_filepath), File.read(formatted2_filepath))\
                                                                         .to_doc    
-    File.write newfilepath, doc.xml(pretty: true)
-    
+    File.write raw_formatted_filepath, doc.xml(pretty: true)
+
     doc.root.xpath('records/section/section').each do |node|
 
       node.attributes[:created] ||= Time.now.to_s
@@ -267,7 +278,8 @@ EOF
       end      
     end
 
-    File.write newfilepath3, doc.xml(pretty: true)
+    render_html doc
+    File.write formatted_filepath, doc.xml(pretty: true)
     
   end
 
