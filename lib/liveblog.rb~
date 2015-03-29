@@ -16,9 +16,7 @@ class LiveBlog
   def initialize(config: nil)
 
 
-    config = if config then 
-      config
-    else
+    config = unless config then 
       
       if File.exists? 'liveblog.conf' then 
         'liveblog.conf'
