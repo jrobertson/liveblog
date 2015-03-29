@@ -11,11 +11,26 @@ require 'rexle-diff'
 
 class LiveBlog
 
+  # the config can either be a hash, a config filepath, or nil
+  #
   def initialize(config: nil)
 
 
-    config ||= 'liveblog.conf' 
+    config = if config then 
+      config
+    else
+      
+      if File.exists? 'liveblog.conf' then 
+        'liveblog.conf'
+      else
+        sc = SimpleConfig.new(new_config())
+        File.write 'liveblog.conf', sc.write
+        sc
+      end
+    end
+    
     h = SimpleConfig.new(config).to_h
+
     dir, @urlbase, @edit_url, @css_url, @xsl_path, @xsl_url, @bannertext = \
      %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext).map{|x| h[x]}
 
@@ -150,6 +165,20 @@ EOF
     [true, 'section added']
   end  
     
+  def new_config()
+
+    dir = Dir.pwd
+    
+    {
+      dir: dir,
+      urlbase: 'http://www.yourwebsitehere.org/liveblog/',
+      edit_url: 'http://www.yourwebsitehere.org/do/liveblog/edit',
+      css_url: '/liveblog/liveblog.css',
+      xsl_path: File.join(dir, 'liveblog.xsl'),
+      xsl_url: '/liveblog/liveblog.xsl',
+      bannertext: ''
+    }
+  end
   
   def path(d=@d)
     [d.year.to_s, Date::MONTHNAMES[d.month].downcase[0..2], d.day.to_s]
@@ -205,6 +234,7 @@ EOF
     doc.root.xpath('records/section/x') do |x|
 
       s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text.unescape]
+
       html = Martile.new(s, ignore_domainlabel: domain).to_html
 
       e = x.parent
@@ -254,8 +284,10 @@ EOF
       return 
     end
 
-    doc = RexleDiff.new(File.read(raw_formatted_filepath), File.read(formatted2_filepath))\
-                                                                        .to_doc    
+    buffer = File.read(raw_formatted_filepath)
+    buffer2 = File.read(formatted2_filepath)
+    doc = RexleDiff.new(buffer, buffer2, fuzzy_match: true).to_doc
+
     File.write raw_formatted_filepath, doc.xml(pretty: true)
 
     doc.root.xpath('records/section/section').each do |node|
