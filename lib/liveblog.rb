@@ -32,8 +32,10 @@ class LiveBlog
     
     h = SimpleConfig.new(config).to_h
 
-    dir, @urlbase, @edit_url, @css_url, @xsl_path, @xsl_url, @bannertext = \
-     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext).map{|x| h[x]}
+    dir, @urlbase, @edit_url, @css_url, @xsl_path, \
+                          @xsl_url, @bannertext, @rss_title = \
+     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext rss_title)\
+                                                                 .map{|x| h[x]}
 
     
     Dir.chdir dir    
@@ -147,6 +149,65 @@ EOF
   
   alias import new_file  
   
+  def save_rss()
+    
+    buffer = File.read File.join(path(), 'raw_formatted.xml')  
+    doc = Rexle.new buffer
+    
+    summary = doc.root.element 'summary'
+
+    dx = Dynarex.new 'liveblog[title,desc,link, pubdate, '\
+        +  'lastbuild_date, lang]/entry(title, desc, created_at, uri, guid)'
+    
+    dx.title = @rss_title || 'LiveBlog'
+    dx.desc = 'Latest LiveBlog posts fetched from ' + @urlbase
+    dx.link = @urlbase
+    dx.order = 'descending'
+    dx.pubdate = rss_timestamp(summary.text('published'))
+    dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
+    dx.lang = 'en-gb'
+
+    doc.root.xpath('records/section/section/details').each do |x|
+
+      a = x.elements.to_a
+      h1 = a.shift.element('h1')
+      hashtag = h1.text[/#\w+$/]
+      created_at = rss_timestamp(h1.attributes[:created])
+
+      a.each do |node|
+
+        node.attributes.delete :created
+        node.attributes.delete :last_modified
+        
+        node.traverse do |x| 
+          
+          x.attributes.delete :created
+          x.attributes.delete :last_modified
+
+        end
+      end
+
+      uri = doc.root.element('summary/link/text()') + hashtag
+      
+      record = {
+        title: h1.text,
+        desc: a.map(&:xml).join("\n"),
+        created_at: created_at,
+        uri: uri,
+        guid: uri
+      }
+      
+      dx.create record
+    end
+
+    dx.xslt_schema = 'channel[title:title,description:desc,link:link,'\
+        + 'pubDate:pubdate,lastBuildDate:lastbuild_date,language:lang]/'\
+        + 'item(title:title,link:uri,description:desc,pubDate:created_at,'\
+        + 'guid:guid)'
+    File.write 'rss.xml', dx.to_rss
+    
+  end    
+  
   private
 
   
@@ -177,7 +238,8 @@ EOF
       css_url: '/liveblog/liveblog.css',
       xsl_path: File.join(dir, 'liveblog.xsl'),
       xsl_url: '/liveblog/liveblog.xsl',
-      bannertext: ''
+      bannertext: '',
+      rss_title: "John Smith's LiveBlog"
     }
   end
   
@@ -199,6 +261,7 @@ EOF
     @dx.save File.join(path(), 'index.xml')
     File.write File.join(path(), 'index.txt'), @dx.to_s
     save_html()
+    save_rss()
   end  
   
   def save_html()
@@ -219,7 +282,8 @@ EOF
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
     add summary, 'prev_day',  static_urlpath(@d-1)
     add summary, 'next_day', @d == Date.today ? '' : static_urlpath(@d+1)
-    add summary, 'bannertext',   @bannertext    
+    add summary, 'bannertext',   @bannertext
+    add summary, 'link',  static_urlpath(@d)
   
     tags = Rexle::Element.new('tags')
     
@@ -260,9 +324,7 @@ EOF
     ]
     
     File.write formatted2_filepath, doc.xml(pretty: true)
-    
-
-    
+        
     # save the related CSS file locally if the file doesn't already exist
     if not File.exists? 'liveblog.css' then
       FileUtils.cp File.join(File.dirname(__FILE__), 'liveblog.css'),\
@@ -342,6 +404,10 @@ EOF
   
   def time(t=Time.now)
     t.strftime "<time>%-I:%M%P</time>"
+  end
+  
+  def rss_timestamp(s)
+    Time.parse(s).strftime("%a, %-d %b %Y %H:%M:%S %Z")
   end
   
 end

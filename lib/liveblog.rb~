@@ -107,7 +107,7 @@ class LiveBlog
   def new_file(s=nil)
 
 s ||= <<EOF    
-<?dynarex schema="sections[title]/section(x)" order='descending'?>
+<?dynarex schema="sections[title]/section(x)"?>
 title: LiveBlog #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
 --#
 
