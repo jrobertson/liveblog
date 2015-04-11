@@ -32,11 +32,12 @@ class LiveBlog
     h = SimpleConfig.new(config).to_h
 
     dir, @urlbase, @edit_url, @css_url, @xsl_path, \
-                          @xsl_url, @bannertext, @title, @rss_title = \
-     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext)\
-                                  + %i(title rss_title).map{|x| h[x]}
+                       @xsl_url, @bannertext, @title, @rss_title, @rss_lang = \
+     (%i(dir urlbase edit_url css_url xsl_path xsl_url bannertext)\
+                                  + %i(title rss_title rss_lang)).map{|x| h[x]}
 
     @title ||= 'LiveBlog'
+    @rss_lang ||= 'en-gb'
     
     Dir.chdir dir    
 
@@ -59,19 +60,19 @@ class LiveBlog
   
   def add_entry(raw_entry)
 
-    entry, hashtag = raw_entry.split(/\s*(?=#\w+$)/)
+    entry, hashtag = raw_entry.split(/\s*#(?=\w+$)/)
     hashtag.downcase!
     
     success, msg = case raw_entry
     
     when /^#\s*\w.*#\w+$/ then
       
-      add_section raw_entry
+      add_section raw_entry, hashtag
       
     when /#\w+$/ then 
       
       entry.gsub!(/(?:^|\s)!t\s/, '\1' + time())
-      add_section_entry entry, hashtag      
+      add_section_entry entry, hashtag
       
     else 
       [false, 'no valid entry found']
@@ -88,6 +89,12 @@ class LiveBlog
     message = "%s %s%s" % [entry, static_urlpath(), hashtag]
     
     [true, message]
+  end
+  
+  # returns a RecordX object for a given hashtag
+  #
+  def find_hashtag(hashtag)    
+    @dx.find hashtag[/\w+$/]
   end
   
   # Use with yesterday's liveblog; 
@@ -141,7 +148,6 @@ EOF
 
     @dx = Dynarex.new 
     @dx.import s
-    @dx.default_key = 'uid'
     
     save()
     
@@ -149,72 +155,21 @@ EOF
   
   alias import new_file  
   
-  def save_rss()
+  def save()
     
-    buffer = File.read File.join(path(), 'raw_formatted.xml')  
-    doc = Rexle.new buffer
-    
-    summary = doc.root.element 'summary'
-
-    dx = Dynarex.new 'liveblog[title,desc,link, pubdate, '\
-        +  'lastbuild_date, lang]/entry(title, desc, created_at, uri, guid)'
-    
-    dx.title = @rss_title || 'LiveBlog'
-    dx.desc = 'Latest LiveBlog posts fetched from ' + @urlbase
-    dx.link = @urlbase
-    dx.order = 'descending'
-    dx.pubdate = rss_timestamp(summary.text('published'))
-    dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
-    dx.lang = 'en-gb'
-
-    doc.root.xpath('records/section/section/details').each do |x|
-
-      next if x.elements.empty?
-      a = x.elements.to_a
-      h1 = a.shift.element('h1')
-      hashtag = h1.text[/#\w+$/]
-      created_at = rss_timestamp(h1.attributes[:created])
-
-      a.each do |node|
-
-        node.attributes.delete :created
-        node.attributes.delete :last_modified
-        
-        node.traverse do |x| 
-          
-          x.attributes.delete :created
-          x.attributes.delete :last_modified
-
-        end
-      end
-
-      uri = doc.root.element('summary/link/text()') + hashtag
-      
-      record = {
-        title: h1.text,
-        desc: a.map(&:xml).join("\n"),
-        created_at: created_at,
-        uri: uri,
-        guid: uri
-      }
-      
-      dx.create record
-    end
-
-    dx.xslt_schema = 'channel[title:title,description:desc,link:link,'\
-        + 'pubDate:pubdate,lastBuildDate:lastbuild_date,language:lang]/'\
-        + 'item(title:title,link:uri,description:desc,pubDate:created_at,'\
-        + 'guid:guid)'
-    File.write 'rss.xml', dx.to_rss
-    
-  end    
+    @dx.save File.join(path(), 'index.xml')
+    File.write File.join(path(), 'index.txt'), @dx.to_s
+    save_html()
+    save_rss()
+  end      
+  
   
   private
 
   
   def add_section_entry(raw_entry, hashtag)
     
-    rec = @dx.all.find {|section| section.x.lstrip.lines.first =~ /#{hashtag}/i}
+    rec = @dx.find hashtag
     
     return [false, 'rec not found'] unless rec
           
@@ -222,9 +177,9 @@ EOF
     [true, 'entry added to section ' + hashtag]
   end
   
-  def add_section(raw_entry)
+  def add_section(raw_entry, hashtag)
 
-    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}})    
+    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, hashtag.downcase)
     [true, 'section added']
   end  
     
@@ -241,7 +196,8 @@ EOF
       xsl_url: '/liveblog/liveblog.xsl',
       bannertext: '',
       title: "John Smith's LiveBlog",
-      rss_title: "John Smith's LiveBlog"
+      rss_title: "John Smith's LiveBlog",
+      rss_lang: 'en_gb'
     }
   end
   
@@ -262,16 +218,7 @@ EOF
   def static_urlpath(d=@d)      
     @urlbase.sub(/[^\/]$/,'\0/') + urlpath(d)
   end
-  
-    
-  def save()
-    
-    @dx.save File.join(path(), 'index.xml')
-    File.write File.join(path(), 'index.txt'), @dx.to_s
-    save_html()
-    save_rss()
-  end  
-  
+      
   def save_html()
      
     formatted2_filepath = File.join(path(), 'formatted2.xml')
@@ -418,5 +365,66 @@ EOF
   def rss_timestamp(s)
     Time.parse(s).strftime("%a, %-d %b %Y %H:%M:%S %Z")
   end
+  
+  def save_rss()
+    
+    buffer = File.read File.join(path(), 'raw_formatted.xml')  
+    doc = Rexle.new buffer
+    
+    summary = doc.root.element 'summary'
+
+    dx = Dynarex.new 'liveblog[title,desc,link, pubdate, '\
+        +  'lastbuild_date, lang]/entry(title, desc, created_at, uri, guid)'
+    
+    dx.title = @rss_title || 'LiveBlog'
+    dx.desc = 'Latest LiveBlog posts fetched from ' + @urlbase
+    dx.link = @urlbase
+    dx.order = 'descending'
+    dx.pubdate = rss_timestamp(summary.text('published'))
+    dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
+    dx.lang = @rss_lang
+
+    doc.root.xpath('records/section/section/details').each do |x|
+
+      next if x.elements.empty?
+      a = x.elements.to_a
+      h1 = a.shift.element('h1')
+      hashtag = h1.text[/#\w+$/]
+      created_at = rss_timestamp(h1.attributes[:created])
+
+      a.each do |node|
+
+        node.attributes.delete :created
+        node.attributes.delete :last_modified
+        
+        node.traverse do |x| 
+          
+          x.attributes.delete :created
+          x.attributes.delete :last_modified
+
+        end
+      end
+
+      uri = doc.root.element('summary/link/text()') + hashtag
+      
+      record = {
+        title: h1.text,
+        desc: a.map(&:xml).join("\n"),
+        created_at: created_at,
+        uri: uri,
+        guid: uri
+      }
+      
+      dx.create record
+    end
+
+    dx.xslt_schema = 'channel[title:title,description:desc,link:link,'\
+        + 'pubDate:pubdate,lastBuildDate:lastbuild_date,language:lang]/'\
+        + 'item(title:title,link:uri,description:desc,pubDate:created_at,'\
+        + 'guid:guid)'
+    File.write 'rss.xml', dx.to_rss
+    
+  end    
+  
   
 end
