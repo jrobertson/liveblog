@@ -13,12 +13,11 @@ class LiveBlog
 
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(config: nil)
-
-
-    config = if config then
+  def initialize(x=nil, config: nil)
     
-      config
+    config = if x or config then
+    
+      x || config
     else
       
       if File.exists? 'liveblog.conf' then 
@@ -33,10 +32,11 @@ class LiveBlog
     h = SimpleConfig.new(config).to_h
 
     dir, @urlbase, @edit_url, @css_url, @xsl_path, \
-                          @xsl_url, @bannertext, @rss_title = \
-     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext rss_title)\
-                                                                 .map{|x| h[x]}
+                          @xsl_url, @bannertext, @title, @rss_title = \
+     %i(dir urlbase edit_url css_url xsl_path xsl_url bannertext)\
+                                  + %i(title rss_title).map{|x| h[x]}
 
+    @title ||= 'LiveBlog'
     
     Dir.chdir dir    
 
@@ -107,10 +107,10 @@ class LiveBlog
   end
 
   def new_file(s=nil)
-
+    
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
-title: LiveBlog #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
+title: #{@title} #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
 --#
 
 EOF
@@ -169,6 +169,7 @@ EOF
 
     doc.root.xpath('records/section/section/details').each do |x|
 
+      next if x.elements.empty?
       a = x.elements.to_a
       h1 = a.shift.element('h1')
       hashtag = h1.text[/#\w+$/]
@@ -239,14 +240,21 @@ EOF
       xsl_path: File.join(dir, 'liveblog.xsl'),
       xsl_url: '/liveblog/liveblog.xsl',
       bannertext: '',
+      title: "John Smith's LiveBlog",
       rss_title: "John Smith's LiveBlog"
     }
   end
   
+  # returns an array with a fractured date in the format [YYYY,mmm,dd]
+  # e.g. #=> ['2015','apr','11']
+  #
   def path(d=@d)
     [d.year.to_s, Date::MONTHNAMES[d.month].downcase[0..2], d.day.to_s]
   end
-  
+
+  # returns a string representing a date within a directory path
+  # e.g. #=> 2015/apr/11/
+  #  
   def urlpath(d=@d)
     path(d).join('/') + '/'
   end
@@ -278,6 +286,7 @@ EOF
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
     add summary, 'day',   @d.strftime("%A")
+    add summary, 'date_uri',   urlpath()
     add summary, 'css_url',   @css_url
     add summary, 'published', Time.now.strftime("%d-%m-%Y %H:%M")
     add summary, 'prev_day',  static_urlpath(@d-1)
