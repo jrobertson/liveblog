@@ -13,7 +13,7 @@ class LiveBlog
 
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(x=nil, config: nil)
+  def initialize(x=nil, config: nil, date: Date.today)        
     
     config = if x or config then
     
@@ -41,7 +41,7 @@ class LiveBlog
     
     Dir.chdir dir    
 
-    @d = Date.today
+    @d = date
     dxfile = File.join(path(), 'index.xml')
 
     if File.exists? dxfile then 
