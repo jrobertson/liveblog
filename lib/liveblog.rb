@@ -114,7 +114,7 @@ class LiveBlog
   end
 
   def new_file(s=nil)
-    
+
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
 title: #{@title} #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
@@ -149,6 +149,15 @@ EOF
     @dx = Dynarex.new 
     @dx.import s
     
+    @dx.xpath('records/section').each do |rec|
+      
+      rec.attributes[:uid] = rec.attributes[:id]
+      rec.attributes[:id] = rec.text('x').lines.first[/#(\w+)$/,1]
+
+    end
+    
+    @dx.instance_variable_set :@dirty_flag, true
+    
     save()
     
   end
@@ -156,11 +165,12 @@ EOF
   alias import new_file  
   
   def save()
-    
+
     @dx.save File.join(path(), 'index.xml')
     File.write File.join(path(), 'index.txt'), @dx.to_s
     save_html()
     save_rss()
+
   end      
   
   
@@ -178,8 +188,15 @@ EOF
   end
   
   def add_section(raw_entry, hashtag)
-
-    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, hashtag.downcase)
+    
+    records = @dx.records
+    uid = if records then
+      r = records.max_by {|k,v| v[:uid].to_i}
+      r ? r[1][:uid].succ : '1'
+    else
+      '1'
+    end
+    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, hashtag.downcase, custom_attributes: {uid: uid})
     [true, 'section added']
   end  
     
@@ -390,6 +407,7 @@ EOF
       a = x.elements.to_a
       h1 = a.shift.element('h1')
       hashtag = h1.text[/#\w+$/]
+
       created_at = rss_timestamp(h1.attributes[:created])
 
       a.each do |node|
