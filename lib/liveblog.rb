@@ -86,7 +86,7 @@ class LiveBlog
     len = (140 - 30 - hashtag.length)
     raw_entry.gsub!(/(?:^|\s)!t\z/,'')
     entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
-    message = "%s %s%s" % [entry, static_urlpath(), hashtag]
+    message = "%s %s#%s" % [entry, static_urlpath(), hashtag]
     
     [true, message]
   end
@@ -170,6 +170,7 @@ EOF
     File.write File.join(path(), 'index.txt'), @dx.to_s
     save_html()
     save_rss()
+    FileUtils.cp File.join(path(),'raw_formatted.xml'), File.join(path(),'raw_formatted.xml.bak')
 
   end      
   
