@@ -170,9 +170,27 @@ EOF
     File.write File.join(path(), 'index.txt'), @dx.to_s
     save_html()
     save_rss()
-    FileUtils.cp File.join(path(),'raw_formatted.xml'), File.join(path(),'raw_formatted.xml.bak')
+    save_frontpage()
+    FileUtils.cp File.join(path(),'raw_formatted.xml'), \
+                                    File.join(path(),'raw_formatted.xml.bak')
 
   end      
+  
+  def update_entry(entry)
+    
+    hashtag = entry.lines.first[/#(\w+)$/,1]
+                                
+    record_found = find_hashtag hashtag
+    
+    if record_found then
+      record_found.x = entry
+      save()
+      [true]
+    else
+      [false, 'record for #' + hashtag + ' not found.']
+    end
+    
+  end
   
   
   private
@@ -445,5 +463,16 @@ EOF
     
   end    
   
-  
+  def save_frontpage()
+
+    doc, doc2 = [@d.day-1, @d.day].map do |day|
+
+      url = "http://www.jamesrobertson.eu/liveblog/2015/apr/%s/formatted.xml" \
+                                                                              % day
+      Rexle.new RXFHelper.read(url).first
+    end
+
+    doc2.root.add doc.root.element('records')
+    File.write 'formatted.xml', doc2.xml
+  end 
 end
