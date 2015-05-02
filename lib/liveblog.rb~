@@ -465,14 +465,22 @@ EOF
   
   def save_frontpage()
 
-    doc, doc2 = [@d.day-1, @d.day].map do |day|
+    # this method is still under developement. If the previous day's 
+    # file doesn't exit it will simply return nil.
+    begin
+      
+      doc, doc2 = [@d-1, @d].map do |d|
 
-      url = "http://www.jamesrobertson.eu/liveblog/2015/apr/%s/formatted.xml" \
-                                                                              % day
-      Rexle.new RXFHelper.read(url).first
+        url = @urlbase + d.strftime("%Y/%b/%d/formatted.xml")
+        Rexle.new RXFHelper.read(url).first
+
+      end
+      
+      doc2.root.add doc.root.element('records')
+      File.write 'formatted.xml', doc2.xml
+      
+    rescue
+      nil
     end
-
-    doc2.root.add doc.root.element('records')
-    File.write 'formatted.xml', doc2.xml
   end 
 end
