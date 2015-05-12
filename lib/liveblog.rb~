@@ -391,7 +391,8 @@ EOF
 
     xslt  = Nokogiri::XSLT(xslt_buffer)
     out = xslt.transform(Nokogiri::XML(doc.xml))
-    File.write File.join(path(d), 'index.html'), out    
+    File.write File.join(path(d), 'index.html'), \
+            out.to_s.gsub(/\s+(?=<\/?(?:pre|code)>)/,'')  
   end
   
   def time(t=Time.now)
@@ -466,7 +467,7 @@ EOF
   def save_frontpage()
 
     # this method is still under developement. If the previous day's 
-    # file doesn't exit it will simply return nil.
+    # file doesn't exist it will simply return nil.
     begin
       
       doc, doc2 = [@d-1, @d].map do |d|
