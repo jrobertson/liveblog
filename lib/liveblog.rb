@@ -13,7 +13,7 @@ class LiveBlog
 
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(x=nil, config: nil, date: Date.today)        
+  def initialize(x=nil, config: nil, date: Date.today, plugins: {})        
     
     config = if x or config then
     
@@ -55,6 +55,19 @@ class LiveBlog
       link_today()
       
     end
+    
+    # intialize plugins
+        
+    @plugins = plugins.inject([]) do |r, plugin|
+      
+      name, settings = plugin
+      return r if settings[:active] == false and !settings[:active]
+      
+      klass_name = 'LiveBlogPlugin' + name.to_s.split(/[-_]/).map{|x| x.capitalize}.join
+
+      r << Kernel.const_get(klass_name).new(settings: settings, variables: @variables)
+
+    end        
       
   end
   
@@ -183,8 +196,17 @@ EOF
     record_found = find_hashtag hashtag
     
     if record_found then
+      
       record_found.x = entry
       save()
+
+      @plugins.each do |x|
+        
+        if x.respond_to? :on_update_entry then
+          x.on_update_section(raw_entry, hashtag) 
+        end
+        
+      end      
       [true]
     else
       [false, 'record for #' + hashtag + ' not found.']
@@ -203,19 +225,36 @@ EOF
     return [false, 'rec not found'] unless rec
           
     rec.x += "\n\n" + raw_entry.chomp + "\n"
+    
+    @plugins.each do |x|
+      
+      if x.respond_to? :on_new_section_entry then
+        x.on_new_section_entry(raw_entry, hashtag) 
+      end
+      
+    end
+    
     [true, 'entry added to section ' + hashtag]
   end
   
   def add_section(raw_entry, hashtag)
     
     records = @dx.records
+    
     uid = if records then
       r = records.max_by {|k,v| v[:uid].to_i}
       r ? r[1][:uid].succ : '1'
     else
       '1'
     end
-    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, hashtag.downcase, custom_attributes: {uid: uid})
+    
+    @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, \
+                             hashtag.downcase, custom_attributes: {uid: uid})
+    
+    @plugins.each do |x| 
+      x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
+    end
+    
     [true, 'section added']
   end  
     
@@ -431,7 +470,7 @@ EOF
     dx.pubdate = rss_timestamp(summary.text('published'))
     dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
     dx.lang = @rss_lang
-
+    
     doc.root.xpath('records/section/section/details').each do |x|
 
       next if x.elements.empty?

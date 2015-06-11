@@ -364,6 +364,17 @@ EOF
 
       end      
     end
+    
+    related_links_filepath = File.join(path(), 'related_links.xml')  
+    
+    if File.exists? related_links_filepath then
+      
+      related_links = Rexle::Element.new 'related_links'
+      doc2 = Rexle.new(File.read(related_links_filepath))
+      doc2.root.xpath('body/*').each {|element| related_links.add element }
+        
+      doc.root.add related_links
+    end
 
     render_html doc
     File.write formatted_filepath, doc.xml(pretty: true)
