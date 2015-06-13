@@ -31,18 +31,20 @@ class LiveBlog
     
     h = SimpleConfig.new(config).to_h
 
-    dir, @urlbase, @edit_url, @css_url, @xsl_path, \
-                       @xsl_url, @bannertext, @title, @rss_title, @rss_lang = \
+    @dir, @urlbase, @edit_url, @css_url, @xsl_path, \
+            @xsl_url, @bannertext, @title, @rss_title, @rss_lang, plugins = \
      (%i(dir urlbase edit_url css_url xsl_path xsl_url bannertext)\
-                                  + %i(title rss_title rss_lang)).map{|x| h[x]}
+                          + %i(title rss_title rss_lang plugins)).map{|x| h[x]}
 
     @title ||= 'LiveBlog'
     @rss_lang ||= 'en-gb'
     
-    Dir.chdir dir    
+    Dir.chdir @dir    
 
     @d = date
     dxfile = File.join(path(), 'index.xml')
+    
+    initialize_plugins(plugins)
 
     if File.exists? dxfile then 
     
@@ -54,21 +56,22 @@ class LiveBlog
       new_file()
       link_today()
       
+      @plugins.each do |x|
+        
+        if x.respond_to? :on_new_day then
+          
+          yesterdays_index_file = File.join(path(@d-1), 'index.xml')
+
+          return unless File.exists? yesterdays_index_file  
+          x.on_new_day(yesterdays_index_file, @urlbase + urlpath(@d-1))
+          
+        end
+        
+      end          
+      
     end
     
-    # intialize plugins
-        
-    @plugins = plugins.inject([]) do |r, plugin|
-      
-      name, settings = plugin
-      return r if settings[:active] == false and !settings[:active]
-      
-      klass_name = 'LiveBlogPlugin' + name.to_s.split(/[-_]/).map{|x| x.capitalize}.join
 
-      r << Kernel.const_get(klass_name).new(settings: settings, variables: @variables)
-
-    end        
-      
   end
   
   def add_entry(raw_entry)
@@ -109,6 +112,22 @@ class LiveBlog
   def find_hashtag(hashtag)    
     @dx.find hashtag[/\w+$/]
   end
+  
+  def initialize_plugins(plugins)
+#     
+    @plugins = plugins.inject([]) do |r, plugin|
+      
+      name, settings = plugin
+      return r if settings[:active] == false and !settings[:active]
+      
+      klass_name = 'LiveBlogPlugin' + name.to_s
+
+      r << Kernel.const_get(klass_name)\
+                      .new(settings: settings, variables: {filepath: @dir})
+
+    end
+  end
+        
   
   # Use with yesterday's liveblog; 
   #

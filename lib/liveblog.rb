@@ -44,7 +44,7 @@ class LiveBlog
     @d = date
     dxfile = File.join(path(), 'index.xml')
     
-    initialize_plugins(plugins)
+    @plugins = initialize_plugins(plugins || [])
 
     if File.exists? dxfile then 
     
@@ -115,7 +115,7 @@ class LiveBlog
   
   def initialize_plugins(plugins)
 #     
-    @plugins = plugins.inject([]) do |r, plugin|
+    plugins.inject([]) do |r, plugin|
       
       name, settings = plugin
       return r if settings[:active] == false and !settings[:active]
@@ -126,6 +126,7 @@ class LiveBlog
                       .new(settings: settings, variables: {filepath: @dir})
 
     end
+        
   end
         
   
