@@ -267,9 +267,9 @@ EOF
     else
       '1'
     end
-    
+
     @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, \
-                             hashtag.downcase, custom_attributes: {uid: uid})
+                             id: hashtag.downcase, custom_attributes: {uid: uid})
     
     @plugins.each do |x| 
       x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section

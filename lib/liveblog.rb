@@ -101,7 +101,8 @@ class LiveBlog
     # we reserve 30 characters for the link
     len = (140 - 30 - hashtag.length)
     raw_entry.gsub!(/(?:^|\s)!t\z/,'')
-    entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len), hashtag] : raw_entry
+    entry = raw_entry.length > len ? "%s... %s" % [raw_entry.slice(0, len),\
+                                                           hashtag] : raw_entry
     message = "%s %s#%s" % [entry, static_urlpath(), hashtag]
     
     [true, message]
@@ -269,7 +270,7 @@ EOF
     end
 
     @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, \
-                             id: hashtag.downcase, custom_attributes: {uid: uid})
+                           id: hashtag.downcase, custom_attributes: {uid: uid})
     
     @plugins.each do |x| 
       x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
@@ -421,6 +422,11 @@ EOF
                                                  attributes: {class: 'border'})
         e.prepend element
 
+      end      
+      
+      node.xpath('//h2').each do |h2|
+        h2.attributes[:id] = node.attributes[:id] \
+            + Time.parse(h2.attributes[:created]).strftime("%H%M")
       end      
     end
     
