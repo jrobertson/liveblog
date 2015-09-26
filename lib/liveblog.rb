@@ -379,7 +379,7 @@ EOF
 
     File.write raw_formatted_filepath, doc.xml(pretty: true)
 
-    doc.root.xpath('records/section/section').each do |node|
+    doc.root.xpath('records/section').each do |node|
 
       node.attributes[:created] ||= Time.now.to_s
       t = Time.parse(node.attributes[:created]) 
