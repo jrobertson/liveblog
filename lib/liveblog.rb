@@ -4,7 +4,7 @@
 
 require 'time'
 require 'fileutils'
-require 'dxsection'
+require 'dxsectionx'
 require 'simple-config'
 require 'rexle-diff'
 
