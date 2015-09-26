@@ -30,7 +30,7 @@ xml version="1.0" encoding="utf-8"?>
   
   <div id='summary'>
   <ul>
-  <xsl:for-each select="records/section/section">
+  <xsl:for-each select="records/section">
     <!--<xsl:sort select='../@id' order='descending'/>-->
      <li><a href='#{@id}'><xsl:value-of select='details/summary/h1'/></a></li>
   </xsl:for-each>  
@@ -68,7 +68,7 @@ xml version="1.0" encoding="utf-8"?>
   <div style='clear:both'/>
   <xsl:for-each select="records/section">
      <!--<xsl:sort select='@id' order='descending'/>-->
-     <xsl:copy-of select='section'/>
+     <xsl:copy-of select='.'/>
 
   </xsl:for-each>
 

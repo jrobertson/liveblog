@@ -3,9 +3,8 @@
 # file: liveblog.rb
 
 require 'time'
-require 'dynarex'
 require 'fileutils'
-require 'martile'
+require 'dxsection'
 require 'simple-config'
 require 'rexle-diff'
 
@@ -347,35 +346,10 @@ EOF
     summary.add tags
     
     domain = @urlbase[/https?:\/\/([^\/]+)/,1].split('.')[-2..-1].join('.')
+    dxsx = DxSectionX.new(doc,  domain: domain, xsl_url: @xsl_url)
+    xmldoc = dxsx.to_doc
 
-    doc.root.xpath('records/section/x') do |x|
-
-      s = "=%s\n%s\n=" % [x.text.lines.first[/#\w+$/], x.text.unescape]
-
-      html = Martile.new(s, ignore_domainlabel: domain).to_html
-
-      e = x.parent
-      x.delete
-      doc2 = Rexle.new(html)
-      
-      h1 = doc2.root.element('h1')
-      details = Rexle::Element.new('details')
-      details.attributes[:open] = 'open'
-      summary = Rexle::Element.new('summary')
-      summary.add h1
-
-      details.add summary
-      doc2.root.xpath('.').each {|x| details.add x }     
-      doc2.root.add details
-      e.add doc2.root
-    end
-    
-    doc.instructions << [
-      'xml-stylesheet',
-      "title='XSL_formatting' type='text/xsl' href='#{@xsl_url}'"
-    ]
-    
-    File.write formatted2_filepath, doc.xml(pretty: true)
+    File.write formatted2_filepath, xmldoc.xml(pretty: true)
         
     # save the related CSS file locally if the file doesn't already exist
     if not File.exists? 'liveblog.css' then
@@ -388,7 +362,7 @@ EOF
     
     unless File.exists? raw_formatted_filepath then
 
-      doc2 = doc.root.deep_clone
+      doc2 = xmldoc.root.deep_clone
 
       doc2.root.traverse do |node|
         node.attributes[:created] = Time.now.to_s
