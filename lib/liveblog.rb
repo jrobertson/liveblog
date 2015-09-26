@@ -471,7 +471,7 @@ EOF
     dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
     dx.lang = @rss_lang
     
-    doc.root.xpath('records/section/section/details').each do |x|
+    doc.root.xpath('records/section/details').each do |x|
 
       next if x.elements.empty?
       a = x.elements.to_a
