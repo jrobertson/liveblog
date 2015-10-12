@@ -62,8 +62,8 @@ class LiveBlog
           yesterdays_index_file = File.join(path(@d-1), 'index.xml')
 
           return unless File.exists? yesterdays_index_file  
-          x.on_new_day(yesterdays_index_file, @urlbase + urlpath(@d-1))
-          
+          x.on_new_day(yesterdays_index_file, @urlbase + urlpath(@d-1), \
+                                                         todays_path: path(@d))          
         end
         
       end          
@@ -382,6 +382,8 @@ EOF
     doc.root.xpath('records/section').each do |node|
 
       node.attributes[:created] ||= Time.now.to_s
+      #t = Time.parse(node.attributes[:last_modified].empty? ? \
+      #               node.attributes[:created] : node.attributes[:last_modified])
       t = Time.parse(node.attributes[:created]) 
       element = Rexle::Element.new('time', value: t.strftime("%-I:%M%P"), \
                                                  attributes: {class: 'border'})
