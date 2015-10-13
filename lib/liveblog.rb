@@ -417,6 +417,8 @@ EOF
       doc.root.add related_links
     end
 
+    @plugins.each {|x| x.on_doc_update(doc) if x.respond_to? :on_doc_update }
+    
     render_html doc
     File.write formatted_filepath, doc.xml(pretty: true)
     
