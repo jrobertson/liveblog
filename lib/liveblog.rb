@@ -62,7 +62,7 @@ class LiveBlog
           yesterdays_index_file = File.join(path(@d-1), 'index.xml')
 
           return unless File.exists? yesterdays_index_file  
-          x.on_new_day(yesterdays_index_file, @urlbase + urlpath(@d-1))
+          x.on_new_day(yesterdays_index_file, urlpath(@d-1))
           
         end
         
@@ -123,7 +123,8 @@ class LiveBlog
       klass_name = 'LiveBlogPlugin' + name.to_s
 
       r << Kernel.const_get(klass_name).new(settings: settings, \
-                        variables: {filepath: @dir, todays_filepath: path(@d)})
+           variables: {filepath: @dir, todays_filepath: path(@d), \
+                                                   urlbase: @urlbase })
 
     end
         
