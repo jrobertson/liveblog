@@ -54,7 +54,7 @@ class LiveBlog
       
       new_file()
       link_today()
-      
+
       @plugins.each do |x|
         
         if x.respond_to? :on_new_day then
@@ -114,7 +114,7 @@ class LiveBlog
   end
   
   def initialize_plugins(plugins)
-#     
+    
     plugins.inject([]) do |r, plugin|
       
       name, settings = plugin
@@ -201,6 +201,7 @@ EOF
   def save()
 
     @dx.save File.join(path(), 'index.xml')
+
     File.write File.join(path(), 'index.txt'), @dx.to_s
     save_html()
     save_rss()
@@ -339,14 +340,16 @@ EOF
   
     tags = Rexle::Element.new('tags')
     
-    doc.root.xpath('records/section/x/text()').each do |x| 
-      tags.add Rexle::Element.new('tag').add_text x.lines.first[/#(\w+)$/,1]\
+    doc.root.xpath('records/section/x/text()').each do |x|
+
+      tags.add Rexle::Element.new('tag').add_text x.lines.first.rstrip[/#(\w+)$/,1]\
                                                                       .downcase
     end
     
     summary.add tags
     
     domain = @urlbase[/https?:\/\/([^\/]+)/,1].split('.')[-2..-1].join('.')
+
     dxsx = DxSectionX.new(doc,  domain: domain, xsl_url: @xsl_url)
     xmldoc = dxsx.to_doc
 
@@ -462,7 +465,7 @@ EOF
     
     buffer = File.read File.join(path(), 'raw_formatted.xml')  
     doc = Rexle.new buffer
-    
+
     summary = doc.root.element 'summary'
 
     dx = Dynarex.new 'liveblog[title,desc,link, pubdate, '\
@@ -472,17 +475,19 @@ EOF
     dx.desc = 'Latest LiveBlog posts fetched from ' + @urlbase
     dx.link = @urlbase
     dx.order = 'descending'
+
     dx.pubdate = rss_timestamp(summary.text('published'))
     dx.lastbuild_date = Time.now.strftime("%a, %-d %b %Y %H:%M:%S %Z")
     dx.lang = @rss_lang
     
     doc.root.xpath('records/section/details').each do |x|
 
-      next if x.elements.empty?
+      next if x.elements.empty? or x.element('summary').elements.empty?
       a = x.elements.to_a
       h1 = a.shift.element('h1')
       hashtag = h1.text[/#\w+$/]
 
+      next unless h1.attributes[:created]
       created_at = rss_timestamp(h1.attributes[:created])
 
       a.each do |node|
