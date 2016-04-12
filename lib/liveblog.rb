@@ -180,7 +180,7 @@ EOF
 
     FileUtils.mkdir_p File.join(path())
 
-    @dx = Dynarex.new 
+    @dx = Dynarex.new
     @dx.import s
     
     @dx.xpath('records/section').each do |rec|
@@ -191,7 +191,7 @@ EOF
     end
     
     @dx.instance_variable_set :@dirty_flag, true
-    
+
     save()
     
   end
@@ -317,7 +317,7 @@ EOF
   end
       
   def save_html()
-     
+
     formatted2_filepath = File.join(path(), 'formatted2.xml')
     FileUtils.cp File.join(path(), 'index.xml'), formatted2_filepath
     
@@ -447,8 +447,9 @@ EOF
       File.read(File.join(lib,'liveblog.xsl'))
     end
 
-    xslt  = Nokogiri::XSLT(xslt_buffer)
-    out = xslt.transform(Nokogiri::XML(doc.xml))
+    #jr270327 xslt  = Nokogiri::XSLT(xslt_buffer)
+    #jr270327 out = xslt.transform(Nokogiri::XML(doc.xml))
+    out = Rexslt.new(xslt_buffer, doc.xml).to_s
     File.write File.join(path(d), 'index.html'), \
             out.to_s.gsub(/\s+(?=<\/?(?:pre|code)>)/,'')  
   end
