@@ -30,10 +30,12 @@ class LiveBlog
     
     h = SimpleConfig.new(config).to_h
 
-    @dir, @urlbase, @edit_url, @css_url, @xsl_path, \
-            @xsl_url, @bannertext, @title, @rss_title, @rss_lang, plugins = \
-     (%i(dir urlbase edit_url css_url xsl_path xsl_url bannertext)\
-                          + %i(title rss_title rss_lang plugins)).map{|x| h[x]}
+    @dir, @urlbase, @edit_url, @css_url, @xsl_path, @xsl_today_path, \
+            @xsl_url, @bannertext, @title, @rss_title, @rss_lang, \
+            @hyperlink_today, plugins = \
+     (%i(dir urlbase edit_url css_url xsl_path xsl_today_path xsl_url) \
+              + %i( bannertext title rss_title rss_lang hyperlink_today ) \
+              + %i(plugins)).map{|x| h[x]}
 
     @title ||= 'LiveBlog'
     @rss_lang ||= 'en-gb'
@@ -290,7 +292,9 @@ EOF
       edit_url: 'http://www.yourwebsitehere.org/do/liveblog/edit',
       css_url: '/liveblog/liveblog.css',
       xsl_path: File.join(dir, 'liveblog.xsl'),
+      xsl_today_path: File.join(dir, 'liveblog_today.xsl'),
       xsl_url: '/liveblog/liveblog.xsl',
+      hyperlink_today: 'http://yourwebsite.org/go_to_today',
       bannertext: '',
       title: "John Smith's LiveBlog",
       rss_title: "John Smith's LiveBlog",
@@ -337,6 +341,7 @@ EOF
     add summary, 'next_day', @d == Date.today ? '' : static_urlpath(@d+1)
     add summary, 'bannertext',   @bannertext
     add summary, 'link',  static_urlpath(@d)
+    add summary, 'hyperlink_today',  @hyperlink_today
   
     tags = Rexle::Element.new('tags')
     
@@ -422,8 +427,8 @@ EOF
     end
 
     @plugins.each {|x| x.on_doc_update(doc) if x.respond_to? :on_doc_update }
-    
-    render_html doc
+
+    render_html doc, xsl: @xsl_today_path
     File.write formatted_filepath, doc.xml(pretty: true)
     
   end
@@ -436,11 +441,11 @@ EOF
   def add(summary, name, s)
     summary.add Rexle::Element.new(name).add_text s
   end
+  
+  def render_html(doc, d=@d, xsl: @xsl_path)
 
-  def render_html(doc, d=@d)
-
-    xslt_buffer = if @xsl_path then
-      buffer, _ = RXFHelper.read @xsl_path
+    xslt_buffer = if xsl then
+      buffer, _ = RXFHelper.read xsl
       buffer
     else
       lib = File.exists?('liveblog.xsl') ? '.' : File.dirname(__FILE__)

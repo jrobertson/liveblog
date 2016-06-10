@@ -22,7 +22,6 @@ xml version="1.0" encoding="utf-8"?>
         </li>
       </ul>
     </nav>
-    <a href='{summary/hyperlink_today}'  id='gotoday'>today &#8594;</a>
   </header>
   
   <xsl:if test='summary/bannertext'>

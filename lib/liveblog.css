@@ -82,6 +82,19 @@ body {
           color: #C332AF;
         }
 
+#gotoday {
+    color: #431;
+    font-size: 1.5em;
+    position: absolute;
+    right: 20px;
+    top: 137px;
+ text-decoration: none;
+}
+
+  #gotoday:hover {
+      color: #ee3;
+  }
+  
 .arrow, .deadarrow {
   background-color: #444;
   background-color: transparent;
