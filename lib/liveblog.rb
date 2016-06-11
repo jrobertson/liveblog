@@ -183,7 +183,8 @@ EOF
     FileUtils.mkdir_p File.join(path())
 
     @dx = Dynarex.new
-    @dx.import s
+
+    @dx.import(s) {|x| sanitise x } 
     
     @dx.xpath('records/section').each do |rec|
       
@@ -213,15 +214,15 @@ EOF
 
   end      
   
-  def update_entry(entry)
+  def update_entry(raw_entry)
     
-    hashtag = entry.lines.first[/#(\w+)$/,1]
+    hashtag = raw_entry.lines.first[/#(\w+)$/,1]
                                 
     record_found = find_hashtag hashtag
     
     if record_found then
       
-      record_found.x = entry
+      record_found.x = sanitise entry
       save()
 
       @plugins.each do |x|
@@ -247,11 +248,12 @@ EOF
     rec = @dx.find hashtag
     
     return [false, 'rec not found'] unless rec
-          
-    rec.x += "\n\n" + raw_entry.chomp + "\n"
+
+    entry = sanitise raw_entry.chomp
+    rec.x += "\n\n" + entry + "\n"
     
     @plugins.each do |x|
-      
+
       if x.respond_to? :on_new_section_entry then
         x.on_new_section_entry(raw_entry, hashtag) 
       end
@@ -281,6 +283,28 @@ EOF
     
     [true, 'section added']
   end  
+  
+  # used by the sanitise method
+  #
+  def code2indent(s2)
+
+    # find the beginning
+    x1 = s2 =~ /^```/    
+    return s2 unless x1
+
+    # find the end
+    x2 = s2[x1+3..-1] =~ /^```/
+    return s2 unless x2
+    
+    codeblock = s2[x1+3..x1+x2+2]
+
+    s3 = s2[0..x1-1] + codeblock.lines.map{|x| x.prepend(' ' * 4)}.join + \
+        "\n" + s2[x1+x2+6..-1]
+
+    return code2indent(s3)
+
+  end
+  
     
   def new_config()
 
@@ -318,6 +342,16 @@ EOF
   
   def static_urlpath(d=@d)      
     @urlbase.sub(/[^\/]$/,'\0/') + urlpath(d)
+  end
+  
+  def sanitise(raw_s)
+    
+    # Transform any code encapsulated within 3 backticks to the 
+    # 4 spaces indented style. This prevents Ruby comments being 
+    # wrongfully identified as a sectionx heading.
+    
+    code2indent(raw_s)
+
   end
       
   def save_html()
