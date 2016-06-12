@@ -222,7 +222,7 @@ EOF
     
     if record_found then
       
-      record_found.x = sanitise entry
+      record_found.x = sanitise raw_entry
       save()
 
       @plugins.each do |x|
