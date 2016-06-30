@@ -63,7 +63,6 @@ class LiveBlog
           
           yesterdays_index_file = File.join(path(@d-1), 'index.xml')
 
-          return unless File.exists? yesterdays_index_file  
           x.on_new_day(yesterdays_index_file, urlpath(@d-1))
           
         end

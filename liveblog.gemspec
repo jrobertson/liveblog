@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'liveblog'
-  s.version = '1.2.2'
+  s.version = '1.2.3'
   s.summary = 'Uses the Dynarex gem to create a daily live blog. Convenient for grouping together microblog posts'
   s.authors = ['James Robertson']
   s.files = Dir['lib/liveblog.rb', 'lib/liveblog.xsl', 'lib/today.xsl', 'lib/liveblog.css']
