@@ -54,26 +54,15 @@ class LiveBlog
       
     else
       
-      new_file()
-      link_today()
-
-      @plugins.each do |x|
-        
-        if x.respond_to? :on_new_day then
-          
-          yesterdays_index_file = File.join(path(@d-1), 'index.xml')
-
-          x.on_new_day(yesterdays_index_file, urlpath(@d-1))
-          
-        end
-        
-      end          
+      new_day()        
       
     end
     
 
   end
   
+  # add a single line entry
+  #
   def add_entry(raw_entry)
 
     entry, hashtag = raw_entry.split(/\s*#(?=\w+$)/)
@@ -147,6 +136,27 @@ class LiveBlog
     render_html doc, @d-1
     
   end
+  
+  def new_day(date: Date.today)
+    
+    @d = date
+    dxfile = File.join(path(), 'index.xml')
+    
+    new_file()
+    link_today()
+
+    @plugins.each do |x|
+      
+      if x.respond_to? :on_new_day then
+        
+        yesterdays_index_file = File.join(path(@d-1), 'index.xml')
+
+        x.on_new_day(yesterdays_index_file, urlpath(@d-1))
+        
+      end
+      
+    end      
+  end
 
   def new_file(s=nil)
 
@@ -200,6 +210,11 @@ EOF
   
   alias import new_file  
   
+  def raw_view(tag)
+    r = self.find_hashtag tag
+    r.x if r
+  end
+  
   def save()
 
     @dx.save File.join(path(), 'index.xml')
@@ -213,10 +228,16 @@ EOF
 
   end      
   
+  def update(val)
+    self.method(val[/^<\?dynarex/] ? :import : :update_entry).call val
+  end
+  
+  # update a page (contains multiple liveblog entries for a section) entry
+  #
   def update_entry(raw_entry)
     
     hashtag = raw_entry.lines.first[/#(\w+)$/,1]
-                                
+
     record_found = find_hashtag hashtag
     
     if record_found then
