@@ -97,6 +97,10 @@ class LiveBlog
     [true, message]
   end
   
+  def date()
+    @d
+  end
+  
   # returns a RecordX object for a given hashtag
   #
   def find_hashtag(hashtag)    
@@ -158,7 +162,9 @@ class LiveBlog
     end      
   end
 
-  def new_file(s=nil)
+  def new_file(x=nil)
+    
+    s, _ = RXFHelper.read(x)
 
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
