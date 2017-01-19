@@ -49,9 +49,8 @@ class LiveBlog
 
     if File.exists? dxfile then 
     
-      @dx = Dynarex.new(dxfile)
-      @d = Date.parse @dx.title
-      
+      load_file(dxfile)
+            
     else
       
       new_day()        
@@ -139,6 +138,11 @@ class LiveBlog
     
     render_html doc, @d-1
     
+  end
+  
+  def load_file(dxfile)
+    @dx = Dynarex.new(dxfile)
+    @d = Date.parse @dx.title    
   end
   
   def new_day(date: Date.today)
