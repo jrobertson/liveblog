@@ -43,7 +43,7 @@ class LiveBlog
     Dir.chdir @dir    
 
     @d = date
-    dxfile = File.join(path(), 'index.xml')
+    dxfile = File.join(@dir, path(), 'index.xml')
     
     @plugins = initialize_plugins(plugins || [])
 
@@ -128,7 +128,7 @@ class LiveBlog
   #
   def link_today()
     
-    raw_formatted_filepath = File.join(path(@d-1), 'formatted.xml')
+    raw_formatted_filepath = File.join(@dir, path(@d-1), 'formatted.xml')
 
     return unless File.exists? raw_formatted_filepath
 
@@ -148,7 +148,7 @@ class LiveBlog
   def new_day(date: Date.today)
     
     @d = date
-    dxfile = File.join(path(), 'index.xml')
+    dxfile = File.join(@dir, path(), 'index.xml')
     
     new_file()
     link_today()
@@ -157,7 +157,7 @@ class LiveBlog
       
       if x.respond_to? :on_new_day then
         
-        yesterdays_index_file = File.join(path(@d-1), 'index.xml')
+        yesterdays_index_file = File.join(@dir, path(@d-1), 'index.xml')
 
         x.on_new_day(yesterdays_index_file, urlpath(@d-1))
         
@@ -168,7 +168,7 @@ class LiveBlog
 
   def new_file(x=nil)
     
-    s, _ = RXFHelper.read(x)
+    s, _ = RXFHelper.read(x) if x
 
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
@@ -199,7 +199,7 @@ EOF
     s.gsub!(/(?:^|\s)!t\s/,  '\1' + time(t))
 
 
-    FileUtils.mkdir_p File.join(path())
+    FileUtils.mkdir_p File.join(@dir, path())
 
     @dx = Dynarex.new
 
@@ -227,14 +227,14 @@ EOF
   
   def save()
 
-    @dx.save File.join(path(), 'index.xml')
+    @dx.save File.join(@dir, path(), 'index.xml')
 
-    File.write File.join(path(), 'index.txt'), @dx.to_s
+    File.write File.join(@dir, path(), 'index.txt'), @dx.to_s
     save_html()
     save_rss()
     save_frontpage()
-    FileUtils.cp File.join(path(),'raw_formatted.xml'), \
-                                    File.join(path(),'raw_formatted.xml.bak')
+    FileUtils.cp File.join(@dir, path(),'raw_formatted.xml'), \
+                                    File.join(@dir, path(),'raw_formatted.xml.bak')
 
   end      
   
@@ -386,8 +386,8 @@ EOF
       
   def save_html()
 
-    formatted2_filepath = File.join(path(), 'formatted2.xml')
-    FileUtils.cp File.join(path(), 'index.xml'), formatted2_filepath
+    formatted2_filepath = File.join(@dir, path(), 'formatted2.xml')
+    FileUtils.cp File.join(@dir, path(), 'index.xml'), formatted2_filepath
     
     doc = Rexle.new File.read(formatted2_filepath)
     
@@ -430,8 +430,8 @@ EOF
                                                                  'liveblog.css'
     end
         
-    raw_formatted_filepath = File.join(path(), 'raw_formatted.xml')  
-    formatted_filepath = File.join(path(), 'formatted.xml')    
+    raw_formatted_filepath = File.join(@dir, path(), 'raw_formatted.xml')  
+    formatted_filepath = File.join(@dir, path(), 'formatted.xml')    
     
     unless File.exists? raw_formatted_filepath then
 
@@ -479,7 +479,7 @@ EOF
       end      
     end
     
-    related_links_filepath = File.join(path(), 'related_links.xml')  
+    related_links_filepath = File.join(@dir, path(), 'related_links.xml')  
     
     if File.exists? related_links_filepath then
       
@@ -533,7 +533,7 @@ EOF
   
   def save_rss()
     
-    buffer = File.read File.join(path(), 'raw_formatted.xml')  
+    buffer = File.read File.join(@dir, path(), 'raw_formatted.xml')  
     doc = Rexle.new buffer
 
     summary = doc.root.element 'summary'
