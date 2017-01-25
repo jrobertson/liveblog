@@ -9,6 +9,8 @@ require 'simple-config'
 require 'rexle-diff'
 
 class LiveBlog
+  
+
 
   # the config can either be a hash, a config filepath, or nil
   #
@@ -220,6 +222,10 @@ EOF
   
   alias import new_file  
   
+  def plugins()
+    @plugins.map(&:class)
+  end
+  
   def raw_view(tag)
     r = self.find_hashtag tag
     r.x if r
@@ -268,6 +274,32 @@ EOF
     end
     
   end
+
+  # determines if the entry to be added uses a valid hashtag
+  
+  def valid_entry?(entry)
+    
+    return false unless entry =~ /#\w+/
+    
+    def hashtag_exists?(tag)
+
+      file = @dir + Date.today.to_time.strftime("%Y/%b/%d/formatted2.xml").downcase
+      
+      if File.exists? file then
+
+        doc = Rexle.new(File.read file)
+        tags = doc.root.xpath('summary/tags/tag/text()')
+        return true if tags.include? tag
+      end
+
+      return false
+    end      
+    
+    tag = entry[/#(\w+)$/,1]
+    
+    entry.lstrip[/^#\s+/] or (tag and hashtag_exists?(tag)) ? true : false
+  
+  end  
   
   
   private
