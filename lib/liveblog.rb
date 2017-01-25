@@ -161,7 +161,7 @@ class LiveBlog
         
         yesterdays_index_file = File.join(@dir, path(@d-1), 'index.xml')
 
-        x.on_new_day(yesterdays_index_file, urlpath(@d-1))
+        Thread.new { x.on_new_day(yesterdays_index_file, urlpath(@d-1)) }
         
       end
       
@@ -264,7 +264,7 @@ EOF
       @plugins.each do |x|
         
         if x.respond_to? :on_update_entry then
-          x.on_update_section(raw_entry, hashtag) 
+          Thread.new { x.on_update_section(raw_entry, hashtag) }
         end
         
       end      
@@ -317,7 +317,7 @@ EOF
     @plugins.each do |x|
 
       if x.respond_to? :on_new_section_entry then
-        x.on_new_section_entry(raw_entry, hashtag) 
+        Thread.new { x.on_new_section_entry(raw_entry, hashtag) }
       end
       
     end
@@ -340,7 +340,9 @@ EOF
                            id: hashtag.downcase, custom_attributes: {uid: uid})
     
     @plugins.each do |x|
-      x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
+      Thread.new do
+        x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
+      end
     end
     
     [true, 'section added']
@@ -522,7 +524,9 @@ EOF
       doc.root.add related_links
     end
 
-    @plugins.each {|x| x.on_doc_update(doc) if x.respond_to? :on_doc_update }
+    @plugins.each do |x| 
+      Thread.new { x.on_doc_update(doc) if x.respond_to? :on_doc_update }
+    end
 
     render_html doc, xsl: @xsl_today_path
     File.write formatted_filepath, doc.xml(pretty: true)
