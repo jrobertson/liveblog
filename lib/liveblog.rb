@@ -16,6 +16,9 @@ class LiveBlog
   #
   def initialize(x=nil, config: nil, date: Date.today, plugins: {})        
     
+    @logger = Logger.new '/tmp/liveblog.log', 'daily'
+    @logger.debug 'inside initialize'
+    
     config = if x or config then
     
       x || config
@@ -99,6 +102,8 @@ class LiveBlog
   end
   
   def date()
+    #@logger = Logger.new '/tmp/liveblog.log', 'daily'
+    #@logger.debug 'inside date'
     @d
   end
   
@@ -150,7 +155,6 @@ class LiveBlog
   def new_day(date: Date.today)
     
     @d = date
-    dxfile = File.join(@dir, path(), 'index.xml')
     
     new_file()
     link_today()
@@ -161,17 +165,22 @@ class LiveBlog
         
         yesterdays_index_file = File.join(@dir, path(@d-1), 'index.xml')
 
-        Thread.new { x.on_new_day(yesterdays_index_file, urlpath(@d-1)) }
+         x.on_new_day(yesterdays_index_file, urlpath(@d-1)) 
         
       end
       
     end      
+    @logger.debug 'inside new_day'
+    
+    'new_day() successful'
   end
 
   def new_file(x=nil)
     
+    @logger.debug 'inside new_file1'
+    s = nil
     s, _ = RXFHelper.read(x) if x
-
+    @logger.debug 's: ' + s.inspect
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
 title: #{@title} #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
@@ -200,7 +209,7 @@ EOF
     s.gsub!(/(?:^|\s)!tc\z/, "*completed #{time(t)}*")
     s.gsub!(/(?:^|\s)!t\s/,  '\1' + time(t))
 
-
+    @logger.debug 'before mkdir_p: ' + path().inspect
     FileUtils.mkdir_p File.join(@dir, path())
 
     @dx = Dynarex.new
@@ -215,6 +224,7 @@ EOF
     end
     
     @dx.instance_variable_set :@dirty_flag, true
+    @logger.debug 'about to save new_file'
 
     save()
     
@@ -241,7 +251,7 @@ EOF
     save_frontpage()
     FileUtils.cp File.join(@dir, path(),'raw_formatted.xml'), \
                                     File.join(@dir, path(),'raw_formatted.xml.bak')
-
+    'save() successful'
   end      
   
   def update(val)
@@ -264,7 +274,7 @@ EOF
       @plugins.each do |x|
         
         if x.respond_to? :on_update_entry then
-          Thread.new { x.on_update_section(raw_entry, hashtag) }
+           x.on_update_section(raw_entry, hashtag) 
         end
         
       end      
@@ -283,7 +293,7 @@ EOF
     
     def hashtag_exists?(tag)
 
-      file = @dir + Date.today.to_time.strftime("%Y/%b/%d/formatted2.xml").downcase
+      file = @dir + Date.today.to_time.strftime("%Y/%b/-%d/formatted2.xml").downcase
       
       if File.exists? file then
 
@@ -317,7 +327,7 @@ EOF
     @plugins.each do |x|
 
       if x.respond_to? :on_new_section_entry then
-        Thread.new { x.on_new_section_entry(raw_entry, hashtag) }
+         x.on_new_section_entry(raw_entry, hashtag) 
       end
       
     end
@@ -340,9 +350,9 @@ EOF
                            id: hashtag.downcase, custom_attributes: {uid: uid})
     
     @plugins.each do |x|
-      Thread.new do
+      
         x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
-      end
+      
     end
     
     [true, 'section added']
@@ -525,7 +535,7 @@ EOF
     end
 
     @plugins.each do |x| 
-      Thread.new { x.on_doc_update(doc) if x.respond_to? :on_doc_update }
+       x.on_doc_update(doc) if x.respond_to? :on_doc_update 
     end
 
     render_html doc, xsl: @xsl_today_path
@@ -638,7 +648,7 @@ EOF
       
       doc, doc2 = [@d-1, @d].map do |d|
 
-        url = @urlbase + d.strftime("%Y/%b/%d/formatted.xml")
+        url = @urlbase + d.strftime("%Y/%b/%-d/formatted.xml")
         Rexle.new RXFHelper.read(url).first
 
       end
