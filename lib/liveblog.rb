@@ -293,7 +293,7 @@ EOF
     
     def hashtag_exists?(tag)
 
-      file = @dir + Date.today.to_time.strftime("%Y/%b/-%d/formatted2.xml").downcase
+      file = @dir + Date.today.to_time.strftime("%Y/%b/%-d/formatted2.xml").downcase
       
       if File.exists? file then
 
