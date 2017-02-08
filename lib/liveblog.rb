@@ -65,6 +65,7 @@ class LiveBlog
 
   end
   
+
   # add a single line entry
   #
   def add_entry(raw_entry)
@@ -309,7 +310,9 @@ EOF
     
     entry.lstrip[/^#\s+/] or (tag and hashtag_exists?(tag)) ? true : false
   
-  end  
+  end
+
+
   
   
   private
@@ -507,7 +510,7 @@ EOF
 
       node.element('details/summary').add element
       
-      node.xpath('//p').each do |e|
+      node.xpath('details/p').each do |e|
 
         e.attributes[:created] ||= Time.now.to_s
         t = Time.parse(e.attributes[:created])
