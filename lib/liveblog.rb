@@ -8,16 +8,20 @@ require 'dxsectionx'
 require 'simple-config'
 require 'rexle-diff'
 
+
 class LiveBlog
   
 
-
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(x=nil, config: nil, date: Date.today, plugins: {})        
+  def initialize(x=nil, config: nil, date: Date.today, plugins: {}, logpath: '')
     
-    @logger = Logger.new '/tmp/liveblog.log', 'daily'
-    @logger.debug 'inside initialize'
+    @log = nil
+    
+    if logpath.length > 0
+      @log = Logger.new logpath, 'daily'
+      @log.debug 'inside initialize'
+    end
     
     config = if x or config then
     
@@ -37,10 +41,10 @@ class LiveBlog
 
     @dir, @urlbase, @edit_url, @css_url, @xsl_path, @xsl_today_path, \
             @xsl_url, @bannertext, @title, @rss_title, @rss_lang, \
-            @hyperlink_today, plugins = \
+            @hyperlink_today, plugins, @photo_upload_url = \
      (%i(dir urlbase edit_url css_url xsl_path xsl_today_path xsl_url) \
               + %i( bannertext title rss_title rss_lang hyperlink_today ) \
-              + %i(plugins)).map{|x| h[x]}
+              + %i(plugins photo_upload_url)).map{|x| h[x]}
 
     @title ||= 'LiveBlog'
     @rss_lang ||= 'en-gb'
@@ -171,17 +175,17 @@ class LiveBlog
       end
       
     end      
-    @logger.debug 'inside new_day'
+    @log.debug 'inside new_day' if @log
     
     'new_day() successful'
   end
 
   def new_file(x=nil)
     
-    @logger.debug 'inside new_file1'
+    @log.debug 'inside new_file' if @log
     s = nil
     s, _ = RXFHelper.read(x) if x
-    @logger.debug 's: ' + s.inspect
+    @log.debug 's: ' + s.inspect  if @log
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
 title: #{@title} #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
@@ -210,7 +214,7 @@ EOF
     s.gsub!(/(?:^|\s)!tc\z/, "*completed #{time(t)}*")
     s.gsub!(/(?:^|\s)!t\s/,  '\1' + time(t))
 
-    @logger.debug 'before mkdir_p: ' + path().inspect
+    @log.debug 'before mkdir_p: ' + path().inspect  if @log
     FileUtils.mkdir_p File.join(@dir, path())
 
     @dx = Dynarex.new
@@ -225,7 +229,7 @@ EOF
     end
     
     @dx.instance_variable_set :@dirty_flag, true
-    @logger.debug 'about to save new_file'
+    @log.debug 'about to save new_file'  if @log
 
     save()
     
@@ -253,7 +257,24 @@ EOF
     FileUtils.cp File.join(@dir, path(),'raw_formatted.xml'), \
                                     File.join(@dir, path(),'raw_formatted.xml.bak')
     'save() successful'
-  end      
+  end
+  
+  def tags()
+
+    file = @dir + Date.today.to_time.strftime("%Y/%b/%-d/formatted2.xml").downcase
+    
+    if File.exists? file then
+
+      Rexle.new(File.read file).root
+            .xpath('summary/tags/tag/text()').map{|x| x.to_s}
+      
+    else
+      
+      []
+      
+    end    
+    
+  end
   
   def update(val)
     self.method(val[/^<\?dynarex/] ? :import : :update_entry).call val
@@ -290,29 +311,12 @@ EOF
   
   def valid_entry?(entry)
     
-    return false unless entry =~ /#\w+/
+    return false unless entry =~ /#\w+/    
     
-    def hashtag_exists?(tag)
-
-      file = @dir + Date.today.to_time.strftime("%Y/%b/%-d/formatted2.xml").downcase
-      
-      if File.exists? file then
-
-        doc = Rexle.new(File.read file)
-        tags = doc.root.xpath('summary/tags/tag/text()')
-        return true if tags.include? tag
-      end
-
-      return false
-    end      
-    
-    tag = entry[/#(\w+)$/,1]
-    
-    entry.lstrip[/^#\s+/] or (tag and hashtag_exists?(tag)) ? true : false
+    tag = entry[/#(\w+)$/,1]    
+    entry.lstrip[/^#\s+/] or (tag and tags().include?(tag)) ? true : false
   
   end
-
-
   
   
   private
@@ -391,6 +395,7 @@ EOF
       dir: dir,
       urlbase: 'http://www.yourwebsitehere.org/liveblog/',
       edit_url: 'http://www.yourwebsitehere.org/do/liveblog/edit',
+      photo_upload_url: 'http://www.yourwebsitehere.org/do/liveblog/upload',
       css_url: '/liveblog/liveblog.css',
       xsl_path: File.join(dir, 'liveblog.xsl'),
       xsl_today_path: File.join(dir, 'liveblog_today.xsl'),
@@ -443,6 +448,7 @@ EOF
     summary.element('recordx_type').delete
 
     add summary, 'edit_url', "%s/%s" % [@edit_url, urlpath()]
+    add summary, 'photo_upload_url', "%s/%s" % [@photo_upload_url, urlpath()]
     add summary, 'date',      @d.strftime("%d-%b-%Y").upcase
     add summary, 'day',   @d.strftime("%A")
     add summary, 'date_uri',   urlpath()
