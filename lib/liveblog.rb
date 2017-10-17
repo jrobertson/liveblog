@@ -14,7 +14,7 @@ class LiveBlog
 
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(x=nil, config: nil, date: Date.today, plugins: {}, logpath: '')
+  def initialize(x=nil, config: nil, datetoday: Date.today, plugins: {}, logpath: '')
     
     @log = nil
     
@@ -51,7 +51,7 @@ class LiveBlog
     
     Dir.chdir @dir    
 
-    @d = date
+    @d = datetoday
     dxfile = File.join(@dir, path(), 'index.xml')
     
     @plugins = initialize_plugins(plugins || [])
@@ -73,6 +73,8 @@ class LiveBlog
   # add a single line entry
   #
   def add_entry(raw_entry)
+    
+    new_day() if date() != Date.today
 
     entry, hashtag = raw_entry.split(/\s*#(?=\w+$)/)
     hashtag.downcase!
