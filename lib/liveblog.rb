@@ -14,14 +14,11 @@ class LiveBlog
 
   # the config can either be a hash, a config filepath, or nil
   #
-  def initialize(x=nil, config: nil, datetoday: Date.today, plugins: {}, logpath: '')
+  def initialize(x=nil, config: nil, datetoday: Date.today, plugins: {}, log: nil)
     
-    @log = nil
+    @log = log
     
-    if logpath.length > 0
-      @log = Logger.new logpath, 'daily'
-      @log.debug 'inside initialize'
-    end
+    log.info 'LiveBlog: inside initialize' if @log
     
     config = if x or config then
     
@@ -165,6 +162,10 @@ class LiveBlog
     
     new_file()
     link_today()
+    
+    if @log then
+      @log.info 'LiveBlog/new_day: before [plugins]#on_new_day'
+    end        
 
     @plugins.each do |x|
       
@@ -177,17 +178,18 @@ class LiveBlog
       end
       
     end      
-    @log.debug 'inside new_day' if @log
+    @log.info 'LiveBlog: inside new_day' if @log
     
     'new_day() successful'
   end
 
   def new_file(x=nil)
     
-    @log.debug 'inside new_file' if @log
+    @log.info 'LiveBlog/new_file: inside new_file()' if @log
     s = nil
     s, _ = RXFHelper.read(x) if x
-    @log.debug 's: ' + s.inspect  if @log
+    @log.info 'LiveBlog/new_file: s: ' + s.inspect  if @log
+    
 s ||= <<EOF    
 <?dynarex schema="sections[title]/section(x)"?>
 title: #{@title} #{ordinalize(@d.day) + @d.strftime(" %B %Y")}
@@ -216,7 +218,7 @@ EOF
     s.gsub!(/(?:^|\s)!tc\z/, "*completed #{time(t)}*")
     s.gsub!(/(?:^|\s)!t\s/,  '\1' + time(t))
 
-    @log.debug 'before mkdir_p: ' + path().inspect  if @log
+    @log.info 'LiveBLog/new_file: before mkdir_p: ' + path().inspect  if @log
     FileUtils.mkdir_p File.join(@dir, path())
 
     @dx = Dynarex.new
@@ -231,7 +233,7 @@ EOF
     end
     
     @dx.instance_variable_set :@dirty_flag, true
-    @log.debug 'about to save new_file'  if @log
+    @log.info 'LiveBlog/new_file: about to save new_file'  if @log
 
     save()
     
@@ -294,6 +296,10 @@ EOF
       
       record_found.x = sanitise raw_entry
       save()
+      
+      if @log then
+        @log.info 'LiveBlog/update_entry: before [plugins]#on_update_entry'
+      end          
 
       @plugins.each do |x|
         
@@ -333,6 +339,11 @@ EOF
     entry = sanitise raw_entry.chomp
     rec.x += "\n\n" + entry + "\n"
     
+    if @log then
+      @log.info 'LiveBlog/add_section_entry: before ' + 
+          '[plugins]#on_new_section_entry'
+    end
+    
     @plugins.each do |x|
 
       if x.respond_to? :on_new_section_entry then
@@ -357,7 +368,11 @@ EOF
 
     @dx.create({x: raw_entry.sub(/(#\w+)$/){|x| x.downcase}}, \
                            id: hashtag.downcase, custom_attributes: {uid: uid})
-    
+
+    if @log then
+      @log.info 'LiveBlog/add_section: before [plugins]#on_new_section'
+    end
+        
     @plugins.each do |x|
       
         x.on_new_section(raw_entry, hashtag) if x.respond_to? :on_new_section
@@ -544,9 +559,27 @@ EOF
         
       doc.root.add related_links
     end
+    
+    if @log then
+      @log.info 'LiveBlog/save_html: before [plugins]#on_doc_update'
+    end
+        
 
     @plugins.each do |x| 
-       x.on_doc_update(doc) if x.respond_to? :on_doc_update 
+      
+      if x.respond_to? :on_doc_update then
+        
+        begin
+          x.on_doc_update(doc) 
+        rescue
+          if @log then
+            @log.debug "LiveBlog/save_html/error: %s#on_doc_update %s" % \
+                [x.class.to_s, ($!)]
+          end
+        end
+        
+      end
+      
     end
 
     render_html doc, xsl: @xsl_today_path
